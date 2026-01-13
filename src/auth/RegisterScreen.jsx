@@ -34,7 +34,7 @@ const RegisterScreen = ({ navigation }) => {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.brand}>VERBIFY</Text>
+            <Text style={styles.brand}>VARCIFY</Text>
           </View>
 
           {/* Spacer */}

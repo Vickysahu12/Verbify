@@ -32,7 +32,7 @@ const LoginScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.welcome}>Welcome To</Text>
-          <Text style={styles.brand}>VERBIFY</Text>
+          <Text style={styles.brand}>VARCIFY</Text>
         </View>
 
         {/* FORM SECTION */}
