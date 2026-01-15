@@ -5,6 +5,7 @@ const Home = () => {
   return (
     <View>
       <Text style={styles.text}>Home</Text>
+      <Text style={styles.header}>Text</Text>
     </View>
   )
 }
@@ -15,5 +16,9 @@ const styles = StyleSheet.create({
   text:{
     alignItems:center,
     marginBottom:center
+  },
+  header:{
+    alignItems:center,
+    justifyContent:center
   }
 })
