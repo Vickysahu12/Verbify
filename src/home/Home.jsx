@@ -4,7 +4,7 @@ import React from 'react'
 const Home = () => {
   return (
     <View>
-      <Text style={styles.text}>Home</Text>
+      <Text style={styles.texts}>Home</Text>
       <Text style={styles.header}>Text</Text>
     </View>
   )
@@ -13,12 +13,7 @@ const Home = () => {
 export default Home
 
 const styles = StyleSheet.create({
-  text:{
-    alignItems:center,
-    marginBottom:center
-  },
-  header:{
-    alignItems:center,
-    justifyContent:center
+  texts:{
+
   }
 })

@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import Home from "../home/Home";
 
 const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -87,7 +88,7 @@ const LoginScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           {/* Sign In */}
-          <TouchableOpacity style={styles.button} activeOpacity={0.9}>
+          <TouchableOpacity style={styles.button} activeOpacity={0.9} onPress={() => navigation.replace("Home")}>
             <Text style={styles.buttonText}>Sign In</Text>
           </TouchableOpacity>
 
