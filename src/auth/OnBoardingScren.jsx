@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   StatusBar,
   Image,
+  Dimensions,
 } from "react-native";
+
+const { width, height } = Dimensions.get("window");
 
 const OnboardingScreen = ({ navigation }) => {
   return (
@@ -28,19 +31,21 @@ const OnboardingScreen = ({ navigation }) => {
       </Text>
 
       {/* Buttons */}
-      <TouchableOpacity
-        style={styles.primaryBtn}
-        onPress={() => navigation.navigate("Login")}
-      >
-        <Text style={styles.primaryText}>Sign In</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonWrapper}>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          onPress={() => navigation.navigate("Login")}
+        >
+          <Text style={styles.primaryText}>Sign In</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.secondaryBtn}
-        onPress={() => navigation.navigate("Register")}
-      >
-        <Text style={styles.secondaryText}>Register</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.secondaryBtn}
+          onPress={() => navigation.navigate("Register")}
+        >
+          <Text style={styles.secondaryText}>Register</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -52,25 +57,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAF6",
     alignItems: "center",
-    paddingTop: 20, // 🔥 image slightly up
     paddingHorizontal: 24,
+    paddingTop: height * 0.05, // 🔥 dynamic top spacing
   },
 
   heroImage: {
-    width: 450,
-    height: 450,
+    width: width * 0.9,      // 🔥 responsive
+    height: width * 0.9,
     resizeMode: "contain",
     marginBottom: 12,
   },
 
   welcomeText: {
-    fontSize: 22,
+    fontSize: 20,
     color: "#111827",
-    marginTop:22
+    marginTop: 16,
   },
 
   appName: {
-    fontSize: 45,
+    fontSize: 40,            // 🔥 balanced
     fontWeight: "800",
     color: "#1F3B1F",
     marginBottom: 8,
@@ -80,18 +85,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B7280",
     textAlign: "center",
-    marginBottom: 28,
-    paddingHorizontal: 8,
+    marginBottom: 24,
+    paddingHorizontal: 10,
+  },
+
+  buttonWrapper: {
+    width: "100%",
+    marginTop: "auto",       // 🔥 buttons stick to bottom safely
+    paddingBottom: height * 0.05,
   },
 
   primaryBtn: {
-    padding:50,
     backgroundColor: "#1F3B1F",
-    width: "85%",
+    width: "100%",
     paddingVertical: 14,
     borderRadius: 28,
     alignItems: "center",
-    marginBottom:10
+    marginBottom: 12,
   },
 
   primaryText: {
@@ -103,7 +113,7 @@ const styles = StyleSheet.create({
   secondaryBtn: {
     borderWidth: 1,
     borderColor: "#1F3B1F",
-    width: "85%",
+    width: "100%",
     paddingVertical: 14,
     borderRadius: 28,
     alignItems: "center",

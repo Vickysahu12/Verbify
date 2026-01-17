@@ -88,7 +88,7 @@ const LoginScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           {/* Sign In */}
-          <TouchableOpacity style={styles.button} activeOpacity={0.9} onPress={() => navigation.replace("Home")}>
+          <TouchableOpacity style={styles.button} activeOpacity={0.9} onPress={() => navigation.replace("Main")}>
             <Text style={styles.buttonText}>Sign In</Text>
           </TouchableOpacity>
 

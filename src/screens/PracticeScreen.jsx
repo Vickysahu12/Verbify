@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from "react-native";
 const HomeScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>HomeScreen</Text>
+      <Text style={styles.text}>PracticeScreen Is on the way</Text>
     </View>
   );
 };
@@ -21,5 +21,6 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 18,
     fontWeight: "600",
+    color:"#000"
   },
 });
