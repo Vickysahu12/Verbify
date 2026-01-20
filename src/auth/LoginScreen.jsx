@@ -9,6 +9,7 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  Image
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import Home from "../home/Home";
@@ -101,16 +102,31 @@ const LoginScreen = ({ navigation }) => {
 
           {/* Social */}
           <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialBtn}>
-              <Icon name="logo-google" size={22} color="#1F3B1F" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialBtn}>
-              <Icon name="logo-facebook" size={22} color="#1F3B1F" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialBtn}>
-              <Icon name="logo-apple" size={22} color="#1F3B1F" />
-            </TouchableOpacity>
-          </View>
+  <TouchableOpacity style={styles.socialBtn}>
+    <Image
+      source={require("../assets/icon/search.png")}
+      style={styles.socialIcon}
+      resizeMode="contain"
+    />
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.socialBtn}>
+    <Image
+      source={require("../assets/icon/facebook.png")}
+      style={styles.socialIcon}
+      resizeMode="contain"
+    />
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.socialBtn}>
+    <Image
+      source={require("../assets/icon/apple.png")}
+      style={styles.socialIcon}
+      resizeMode="contain"
+    />
+  </TouchableOpacity>
+</View>
+
         </View>
 
         {/* Footer */}
@@ -254,4 +270,9 @@ const styles = StyleSheet.create({
     color: "#1F3B1F",
     fontWeight: "700",
   },
+  socialIcon: {
+  width: 22,
+  height: 22,
+},
+
 });
