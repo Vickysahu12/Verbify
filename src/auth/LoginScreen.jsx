@@ -274,5 +274,4 @@ const styles = StyleSheet.create({
   width: 22,
   height: 22,
 },
-
 });
