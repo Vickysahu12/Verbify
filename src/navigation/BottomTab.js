@@ -3,7 +3,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Image, Text, View, Platform } from "react-native";
 
 import HomeScreen from "../home/Home";
-import PracticeScreen from "../screens/PracticeScreen";
+//import PracticeStack from "../screens/practiceArea/PracticeStack";
+import PracticeScreen from "../screens/practiceArea/PracticeScreen";
 import TestsScreen from "../screens/TestsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
