@@ -156,6 +156,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 40,
     color: "#6B7280",
-    fontSize: 14,
+    fontSize: 15,
   },
 });
