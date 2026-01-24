@@ -71,14 +71,14 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 20,
     color: "#111827",
-    marginTop: 16,
+    marginTop: 17,
   },
 
   appName: {
     fontSize: 40,            // 🔥 balanced
     fontWeight: "800",
     color: "#1F3B1F",
-    marginBottom: 8,
+    marginBottom: 9,
   },
 
   tagline: {
