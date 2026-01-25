@@ -125,3 +125,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+// Today is rest day for building our app
