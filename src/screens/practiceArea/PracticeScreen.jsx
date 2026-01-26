@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import VocabScreen from "./vocab/VocabScreen";
+import RCScreen from "./vocab/RcScreen";
 
 const PracticeScreen = () => {
   const [activeTab, setActiveTab] = useState("Vocab");
@@ -82,9 +83,7 @@ const PracticeScreen = () => {
       >
         {activeTab === "Vocab" && <VocabScreen />}
 
-        {activeTab === "RC" && (
-          <Text style={styles.placeholder}>RC coming soon 📖</Text>
-        )}
+        {activeTab === "RC" && <RCScreen/>}
 
         {activeTab === "Article" && (
           <Text style={styles.placeholder}>Articles coming soon 📰</Text>
