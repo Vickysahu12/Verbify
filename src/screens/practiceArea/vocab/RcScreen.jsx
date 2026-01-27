@@ -149,26 +149,139 @@ const RCScreen = () => {
 export default RCScreen;
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: "#F9FAF6", paddingHorizontal: 20, paddingTop: 40 },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24, },
-  timerContainer: { backgroundColor: "#ECFDF5", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  timerText: { fontWeight: "700", color: "#1F3B1F", fontSize: 14 },
-  title: { fontSize: 24, fontWeight: "800", color: "#1F3B1F" },
-  subtitle: { fontSize: 13, color: "#6B7280", marginTop: 4 },
-  passageCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 20, marginBottom: 28, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 12, elevation: 4 },
-  passageText: { fontSize: 16, lineHeight: 24, color: "#1F2937" },
-  questionCard: { marginBottom: 24 },
-  questionText: { fontSize: 15, fontWeight: "600", color: "#0F172A", marginBottom: 12 },
-  optionBtn: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, backgroundColor: "#ECFDF5", marginBottom: 8, alignItems: "center" },
-  selectedOption: { backgroundColor: "#1F3B1F" },
-  optionText: { color: "#1F3B1F", fontWeight: "500", flexShrink: 1 },
-  tickMark: { color: "#FFFFFF", fontWeight: "700", marginLeft: 10 },
-  nextBtn: { backgroundColor: "#ECFDF5", paddingVertical: 14, borderRadius: 14, alignItems: "center", marginBottom: 40 },
-  nextText: { fontSize: 14, fontWeight: "600", color: "#1F3B1F" },
-  modalOverlay: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
-  modalContent: { backgroundColor: "#fff", padding: 30, borderRadius: 20, width: "80%", alignItems: "center" },
-  modalTitle: { fontSize: 20, fontWeight: "700", marginBottom: 10, color: "#1F3B1F" },
-  modalSubtitle: { fontSize: 14, color: "#6B7280", marginBottom: 20, textAlign: "center" },
-  modalButton: { backgroundColor: "#1F3B1F", paddingVertical: 12, paddingHorizontal: 20, borderRadius: 14 },
-  modalButtonText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  container: 
+  { backgroundColor: "#F9FAF6",
+    paddingHorizontal: 20, 
+    paddingTop: 40 
+  },
+  headerRow:
+  { flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  timerContainer:
+  { backgroundColor: "#ECFDF5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12
+  },
+  timerText:
+  { fontWeight: "700",
+    color: "#1F3B1F",
+    fontSize: 14
+  },
+  title:
+  { fontSize: 24,
+    fontWeight: "800",
+    color: "#1F3B1F" 
+  },
+  subtitle:
+  { fontSize: 13,
+    color: "#6B7280",
+    marginTop: 4
+  },
+  passageCard:
+  { backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 28,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 4 
+  },
+  passageText:
+  { fontSize: 16, 
+    lineHeight: 24,
+    color: "#1F2937"
+  },
+  questionCard:
+  { 
+    marginBottom: 24 
+  },
+  questionText:
+  { 
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0F172A",
+    marginBottom: 12
+  },
+  optionBtn:
+  { 
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#ECFDF5",
+    marginBottom: 8,
+    alignItems: "center"
+  },
+  selectedOption:
+  {
+    backgroundColor: "#1F3B1F"
+  },
+  optionText:
+  { color: "#1F3B1F",
+    fontWeight: "500",
+    flexShrink: 1
+  },
+  tickMark:
+  { color: "#FFFFFF",
+    fontWeight: "700",
+    marginLeft: 10 
+  },
+  nextBtn:
+  { 
+    backgroundColor: "#ECFDF5",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 40
+  },
+  nextText:
+  { fontSize: 14,
+    fontWeight: "600",
+    color: "#1F3B1F"
+  },
+  modalOverlay:
+  {
+   flex: 1,
+   justifyContent: "center",
+   alignItems: "center", 
+   backgroundColor: "rgba(0,0,0,0.5)" 
+  },
+  modalContent:
+  { backgroundColor: "#fff",
+    padding: 30,
+    borderRadius: 20,
+    width: "80%",
+    alignItems: "center"
+  },
+  modalTitle:
+  { fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 10,
+    color: "#1F3B1F" 
+  },
+  modalSubtitle:
+  { fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 20,
+    textAlign: "center"
+  },
+  modalButton:
+  {
+    backgroundColor: "#1F3B1F",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 14
+  },
+  modalButtonText:
+  {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14
+  },
 });
