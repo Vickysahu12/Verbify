@@ -33,7 +33,7 @@ const LoginScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.welcome}>Welcome To</Text>
-          <Text style={styles.brand}>VARCIFY</Text>
+          <Text style={styles.brand}>LingoLift</Text>
         </View>
 
         {/* FORM SECTION */}

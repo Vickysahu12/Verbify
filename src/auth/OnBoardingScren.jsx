@@ -24,7 +24,7 @@ const OnboardingScreen = ({ navigation }) => {
 
       {/* Text Content */}
       <Text style={styles.welcomeText}>Welcome To</Text>
-      <Text style={styles.appName}>VARCIFY</Text>
+      <Text style={styles.appName}>LingoLift</Text>
 
       <Text style={styles.tagline}>
         Learn smarter, not harder. Make education fun & achieve your goals!

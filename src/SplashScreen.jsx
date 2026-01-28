@@ -44,7 +44,7 @@ const SplashScreen = ({ navigation }) => {
         ]}
       >
         {/* App Name */}
-        <Text style={styles.appName}>VARCIFY</Text>
+        <Text style={styles.appName}>LINGOLIFT</Text>
 
         {/* Tagline */}
         <Text style={styles.tagline}>
