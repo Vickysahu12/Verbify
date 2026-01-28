@@ -43,6 +43,10 @@ const RCScreen = () => {
     Array(PASSAGE.questions.length).fill(null)
   );
   const [fullScreen, setFullScreen] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const isAllAnswered = !answers.includes(null);
+
+
 
   const handleSelect = (qIndex, oIndex) => {
     const updated = [...answers];
@@ -108,9 +112,17 @@ const RCScreen = () => {
         ))}
 
         {/* Finish */}
-        <TouchableOpacity style={styles.finishBtn}>
-          <Text style={styles.finishText}>Finish RC</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+         style={[
+         styles.finishBtn,
+         !isAllAnswered && { opacity: 0.4 },
+       ]}
+        disabled={!isAllAnswered}
+        onPress={() => setShowFinishModal(true)}
+          >
+        <Text style={styles.finishText}>Finish RC</Text>
+       </TouchableOpacity>
+
       </ScrollView>
 
       {/* 🔹 Full Screen Mode */}
@@ -155,10 +167,29 @@ const RCScreen = () => {
                   </TouchableOpacity>
                 ))}
               </View>
+              
             ))}
           </ScrollView>
         </SafeAreaView>
       </Modal>
+      <Modal transparent visible={showFinishModal} animationType="fade">
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalBox}>
+      <Text style={styles.modalTitle}>RC Completed ✅</Text>
+      <Text style={styles.modalDesc}>
+        Good job. You can move to the Article section now.
+      </Text>
+
+      <TouchableOpacity
+        style={styles.modalBtn}
+        onPress={() => setShowFinishModal(false)}
+      >
+        <Text style={styles.modalBtnText}>Go to Article →</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
     </SafeAreaView>
   );
 };
@@ -253,4 +284,40 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.4)",
+  justifyContent: "center",
+  alignItems: "center",
+},
+modalBox: {
+  width: "80%",
+  backgroundColor: "#fff",
+  borderRadius: 18,
+  padding: 24,
+  alignItems: "center",
+},
+modalTitle: {
+  fontSize: 18,
+  fontWeight: "700",
+  color: "#1F3B1F",
+  marginBottom: 8,
+},
+modalDesc: {
+  fontSize: 14,
+  color: "#6B7280",
+  textAlign: "center",
+  marginBottom: 20,
+},
+modalBtn: {
+  backgroundColor: "#1F3B1F",
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 14,
+},
+modalBtnText: {
+  color: "#fff",
+  fontWeight: "600",
+},
+
 });
