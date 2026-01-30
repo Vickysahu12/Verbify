@@ -150,9 +150,28 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16),
     elevation: 2,
   },
-  cardTitle: { fontSize: scale(16), fontWeight: "700", color: "#0F172A", marginBottom: verticalScale(6) },
-  cardSummary: { fontSize: scale(14), color: "#4B5563", lineHeight: verticalScale(20), marginBottom: verticalScale(12) },
-  cardFooter: { flexDirection: "row", justifyContent: "space-between" },
-  readTime: { fontSize: scale(12), color: "#6B7280" },
-  openIcon: { fontSize: scale(13), fontWeight: "700", color: "#1F3B1F" },
+  cardTitle: {
+    fontSize: scale(16),
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: verticalScale(6)
+  },
+  cardSummary: {
+    fontSize: scale(14),
+    color: "#4B5563",
+    lineHeight: verticalScale(20),
+    marginBottom: verticalScale(12)
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  readTime: {
+    fontSize: scale(12),
+    color: "#6B7280"
+  },
+  openIcon: {
+    fontSize: scale(13),
+    fontWeight: "700",
+    color: "#1F3B1F" },
 });
