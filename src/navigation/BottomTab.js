@@ -3,8 +3,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Image, Text, View, Platform } from "react-native";
 
 import HomeScreen from "../home/Home";
-//import PracticeStack from "../screens/practiceArea/PracticeStack";
-import PracticeScreen from "../screens/practiceArea/PracticeScreen";
+import PracticeStack from "../navigation/PracticeStack"
+//import PracticeScreen from "../screens/practiceArea/PracticeScreen";
 import TestsScreen from "../screens/TestsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
@@ -67,7 +67,7 @@ const BottomTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Practice" component={PracticeScreen} />
+      <Tab.Screen name="Practice" component={PracticeStack} />
       <Tab.Screen name="Tests" component={TestsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

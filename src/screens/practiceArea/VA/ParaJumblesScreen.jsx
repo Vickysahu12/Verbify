@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-const CategoryDetailScreen = ({ category, onBack }) => {
+const ParaJumbleScreen = ({ category, onBack }) => {
   return (
     <View style={styles.root}>
       {/* Sticky header */}
@@ -19,7 +19,7 @@ const CategoryDetailScreen = ({ category, onBack }) => {
   );
 };
 
-export default CategoryDetailScreen;
+export default ParaJumbleScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F9FAF6" },

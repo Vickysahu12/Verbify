@@ -16,14 +16,19 @@ const { width, height } = Dimensions.get("window");
 const scale = (size) => (width / 375) * size;
 const verticalScale = (size) => (height / 812) * size;
 
-const ArticleDetailScreen = ({ article, onBack }) => {
+const ArticleDetailScreen = ({ route, navigation }) => {
+  const { article } = route.params || {};
+
   if (!article) return null;
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+        >
           <Image
             source={require("../../../assets/icon/backbutton.png")}
             style={styles.backIcon}
@@ -35,24 +40,21 @@ const ArticleDetailScreen = ({ article, onBack }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.container}
       >
-        {/* Title */}
         <Text style={styles.title}>{article.title}</Text>
         <Text style={styles.readTime}>{article.readTime}</Text>
 
-        {/* Author */}
         <View style={styles.authorRow}>
           <Text style={styles.authorName}>{article.author}</Text>
         </View>
 
-        {/* Cover Image */}
         <Image source={article.coverImage} style={styles.coverImg} />
 
-        {/* Article Content */}
         <Text style={styles.content}>{article.content}</Text>
       </ScrollView>
     </SafeAreaView>
   );
 };
+
 
 export default ArticleDetailScreen;
 
@@ -71,6 +73,7 @@ const styles = StyleSheet.create({
     width: scale(36),
     height: scale(36),
     justifyContent: "center",
+    marginTop:30
   },
 
   backIcon: {
