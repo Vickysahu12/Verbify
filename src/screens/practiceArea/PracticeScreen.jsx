@@ -147,8 +147,6 @@ const PracticeScreen = () => {
 
 export default PracticeScreen;
 
-/* ---------------- STYLES ---------------- */
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
