@@ -13,6 +13,17 @@ import { useNavigation } from "@react-navigation/native";
 const { width } = Dimensions.get("window");
 const scale = (s) => (width / 375) * s;
 
+const DUMMY_WORD = {
+  word: "Ephemeral",
+  pronunciation: "/əˈfem(ə)rəl/",
+  question: "Select the most accurate meaning:",
+  options: ["Short-lived", "Permanent", "Transparent", "Weak"],
+  correct: 0,
+  explanation:
+    "Ephemeral means lasting for a very short time.",
+};
+
+
 const PracticeScreen = () => {
   const navigation = useNavigation();
 
@@ -45,101 +56,149 @@ const PracticeScreen = () => {
         {/* Section Title */}
         <Text style={styles.sectionTitle}>Study Modules</Text>
 
+        
         {/* VOCAB */}
-        <View style={styles.card}>
-          <Text style={[styles.tag, styles.highPriority]}>
-            HIGH PRIORITY
-          </Text>
+<View style={styles.card}>
+  <Text style={[styles.tag, styles.highPriority]}>
+    HIGH PRIORITY
+  </Text>
 
-          <Text style={styles.cardTitle}>VOCAB</Text>
-          <Text style={styles.cardDesc}>
-            Master 500+ high-frequency CAT words and context usage.
-          </Text>
+  <Text style={styles.cardTitle}>VOCAB</Text>
+  <Text style={styles.cardDesc}>
+    Master 500+ high-frequency CAT words and context usage.
+  </Text>
 
-          <View style={styles.cardBottom}>
-            <View style={styles.cardProgress}>
-              <View style={[styles.cardProgressFill, { width: "45%" }]} />
-            </View>
-            <Text style={styles.percent}>45%</Text>
-          </View>
+  <View style={styles.cardBottom}>
+    <View style={styles.cardProgress}>
+      <View style={[styles.cardProgressFill, { width: "45%" }]} />
+    </View>
+    <Text style={styles.percent}>45%</Text>
+  </View>
 
-          <TouchableOpacity
-            style={styles.cta}
-            onPress={() => navigation.navigate("Vocab")}
-          >
-            <Text style={styles.ctaText}>Start Learning</Text>
-          </TouchableOpacity>
-        </View>
+  {/* 🔥 Dual CTA */}
+  <View style={styles.dualCTA}>
+    <TouchableOpacity
+      style={[styles.ctaSmall, styles.ctaPrimary]}
+      onPress={() => navigation.navigate("VocabLearning")}
+    >
+      <Text style={styles.ctaPrimaryText}>Learn</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+  style={[styles.ctaSmall, styles.ctaSecondary]}
+  onPress={() =>
+    navigation.navigate("Vocab", {
+      wordData: DUMMY_WORD,
+    })
+  }
+>
+  <Text style={styles.ctaSecondaryText}>Practice</Text>
+</TouchableOpacity>
+
+  </View>
+</View>
 
         {/* RC */}
-        <View style={styles.card}>
-          <Text style={[styles.tag, styles.newContent]}>
-            NEW CONTENT
-          </Text>
+        {/* RC */}
+<View style={styles.card}>
+  <Text style={[styles.tag, styles.newContent]}>
+    NEW CONTENT
+  </Text>
 
-          <Text style={styles.cardTitle}>RC</Text>
-          <Text style={styles.cardDesc}>
-            3 passages remaining for today's streak. Focus: Philosophy & Arts.
-          </Text>
+  <Text style={styles.cardTitle}>RC</Text>
+  <Text style={styles.cardDesc}>
+    3 passages remaining for today's streak. Focus: Philosophy & Arts.
+  </Text>
 
-          <View style={styles.cardBottom}>
-            <View style={styles.cardProgress}>
-              <View style={[styles.cardProgressFill, { width: "12%" }]} />
-            </View>
-            <Text style={styles.percent}>12%</Text>
-          </View>
+  <View style={styles.cardBottom}>
+    <View style={styles.cardProgress}>
+      <View style={[styles.cardProgressFill, { width: "12%" }]} />
+    </View>
+    <Text style={styles.percent}>12%</Text>
+  </View>
 
-          <TouchableOpacity
-            style={styles.cta}
-            onPress={() => navigation.navigate("RC")}
-          >
-            <Text style={styles.ctaText}>Practice</Text>
-          </TouchableOpacity>
-        </View>
+  <View style={styles.dualCTA}>
+    <TouchableOpacity
+      style={[styles.ctaSmall, styles.ctaPrimary]}
+      onPress={() => navigation.navigate("RcRead")}
+    >
+      <Text style={styles.ctaPrimaryText}>Read</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[styles.ctaSmall, styles.ctaSecondary]}
+      onPress={() => navigation.navigate("RC")}
+    >
+      <Text style={styles.ctaSecondaryText}>Practice</Text>
+    </TouchableOpacity>
+  </View>
+</View>
+
 
         {/* ESSAY */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>ESSAY / ARTICLE</Text>
-          <Text style={styles.cardDesc}>
-            Daily editorial analysis from The Guardian and AEON.
-          </Text>
+        {/* ESSAY */}
+<View style={styles.card}>
+  <Text style={styles.cardTitle}>ESSAY / ARTICLE</Text>
+  <Text style={styles.cardDesc}>
+    Daily editorial analysis from The Guardian and AEON.
+  </Text>
 
-          <View style={styles.cardBottom}>
-            <View style={styles.cardProgress}>
-              <View style={[styles.cardProgressFill, { width: "80%" }]} />
-            </View>
-            <Text style={styles.percent}>80%</Text>
-          </View>
+  <View style={styles.cardBottom}>
+    <View style={styles.cardProgress}>
+      <View style={[styles.cardProgressFill, { width: "80%" }]} />
+    </View>
+    <Text style={styles.percent}>80%</Text>
+  </View>
 
-          <TouchableOpacity
-            style={styles.cta}
-            onPress={() => navigation.navigate("Article")}
-          >
-            <Text style={styles.ctaText}>Read Now</Text>
-          </TouchableOpacity>
-        </View>
+  <View style={styles.dualCTA}>
+    <TouchableOpacity
+      style={[styles.ctaSmall, styles.ctaPrimary]}
+      onPress={() => navigation.navigate("Article")}
+    >
+      <Text style={styles.ctaPrimaryText}>Read</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[styles.ctaSmall, styles.ctaSecondary]}
+      onPress={() => navigation.navigate("ArticleDetail")}
+    >
+      <Text style={styles.ctaSecondaryText}>Analyse</Text>
+    </TouchableOpacity>
+  </View>
+</View>
 
         {/* VA */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>VERBAL ABILITY</Text>
-          <Text style={styles.cardDesc}>
-            Parajumbles, Odd One Out, and Critical Reasoning drills.
-          </Text>
+        {/* VA */}
+<View style={styles.card}>
+  <Text style={styles.cardTitle}>VERBAL ABILITY</Text>
+  <Text style={styles.cardDesc}>
+    Parajumbles, Odd One Out, and Critical Reasoning drills.
+  </Text>
 
-          <View style={styles.cardBottom}>
-            <View style={styles.cardProgress}>
-              <View style={[styles.cardProgressFill, { width: "30%" }]} />
-            </View>
-            <Text style={styles.percent}>30%</Text>
-          </View>
+  <View style={styles.cardBottom}>
+    <View style={styles.cardProgress}>
+      <View style={[styles.cardProgressFill, { width: "30%" }]} />
+    </View>
+    <Text style={styles.percent}>30%</Text>
+  </View>
 
-          <TouchableOpacity
-            style={styles.cta}
-            onPress={() => navigation.navigate("VA")}
-          >
-            <Text style={styles.ctaText}>Resume</Text>
-          </TouchableOpacity>
-        </View>
+  <View style={styles.dualCTA}>
+    <TouchableOpacity
+      style={[styles.ctaSmall, styles.ctaPrimary]}
+      onPress={() => navigation.navigate("VaConcept")}
+    >
+      <Text style={styles.ctaPrimaryText}>Concepts</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[styles.ctaSmall, styles.ctaSecondary]}
+      onPress={() => navigation.navigate("VA")}
+    >
+      <Text style={styles.ctaSecondaryText}>Practice</Text>
+    </TouchableOpacity>
+  </View>
+</View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -299,4 +358,38 @@ header: {
     fontSize: scale(14),
     fontWeight: "700",
   },
+  dualCTA: {
+  flexDirection: "row",
+  gap: scale(12),
+},
+
+ctaSmall: {
+  flex: 1,
+  paddingVertical: scale(10),
+  borderRadius: scale(10),
+  alignItems: "center",
+},
+
+ctaPrimary: {
+  backgroundColor: "#1F3B1F",
+},
+
+ctaSecondary: {
+  backgroundColor: "#FFFFFF",
+  borderWidth: 1,
+  borderColor: "#1F3B1F",
+},
+
+ctaPrimaryText: {
+  color: "#FFFFFF",
+  fontSize: scale(13),
+  fontWeight: "700",
+},
+
+ctaSecondaryText: {
+  color: "#1F3B1F",
+  fontSize: scale(13),
+  fontWeight: "700",
+},
+
 });

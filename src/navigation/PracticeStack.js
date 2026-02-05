@@ -5,6 +5,7 @@ import PracticeScreen from "../screens/practiceArea/PracticeScreen";
 
 //
 import VocabScreen from "../screens/practiceArea/vocab/VocabScreen";
+import VocabLearningScreen from "../screens/practiceArea/vocab/VocabLearningScreen";
 
 // Article
 import ArticleScreen from "../screens/practiceArea/Article/ArticleScreen";
@@ -12,10 +13,11 @@ import ArticleDetailScreen from "../screens/practiceArea/Article/ArticleDetailsS
 
 // RC
 import RcScreen from "../screens/practiceArea/RC/RcScreen";
+import RcReadingScreen from "../screens/practiceArea/RC/RcReadingScreen";
 
 // VA
 import VaScreen from "../screens/practiceArea/VA/VaScreen";
-import ParaJumbleScreen from "../screens/practiceArea/VA/ParaJumblesScreen";
+import VaConcept from "../screens/practiceArea/VA/VaConcept";
 
 const Stack = createNativeStackNavigator();
 
@@ -28,6 +30,7 @@ const PracticeStack = () => {
 
       {/* Vocab Flow */}
       <Stack.Screen name="Vocab" component={VocabScreen}/>
+      <Stack.Screen name="VocabLearning" component={VocabLearningScreen}/>
 
       {/* ARTICLE FLOW */}
       <Stack.Screen name="Article" component={ArticleScreen} />
@@ -35,10 +38,12 @@ const PracticeStack = () => {
 
       {/* RC FLOW */}
       <Stack.Screen name="RC" component={RcScreen} />
+      <Stack.Screen name="RcRead" component={RcReadingScreen}/>
+      
 
       {/* VA FLOW */}
       <Stack.Screen name="VA" component={VaScreen} />
-      <Stack.Screen name="ParaJumble" component={ParaJumbleScreen} />
+      <Stack.Screen name="VaConcept" component={VaConcept}/>
 
     </Stack.Navigator>
   );
