@@ -6,56 +6,77 @@ import {
   Animated,
   ActivityIndicator,
   StatusBar,
+  Platform,
 } from "react-native";
 
 const SplashScreen = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const loaderOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Start main animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1200,
+        duration: 1000, // Slightly faster
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 6,
+        tension: 40,
         useNativeDriver: true,
       }),
     ]).start();
 
+    // Delay loader animation for smoother effect
+    setTimeout(() => {
+      Animated.timing(loaderOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    }, 800);
+
+    // Navigate after 2.5 seconds
     const timer = setTimeout(() => {
       navigation.replace("Onboarding");
-    }, 7000);
+    }, 2500); // Changed from 7000
 
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, fadeAnim, scaleAnim, loaderOpacity]);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAF6" />
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor="#F9FAF6"
+        translucent={false}
+      />
 
       <Animated.View
         style={[
           styles.content,
-          { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
+          { 
+            opacity: fadeAnim, 
+            transform: [{ scale: scaleAnim }] 
+          },
         ]}
       >
-        {/* App Name */}
         <Text style={styles.appName}>LINGOLIFT</Text>
-
-        {/* Tagline */}
-        <Text style={styles.tagline}>
-          Learn smarter. Speak better.
-        </Text>
+        <Text style={styles.tagline}>Learn smarter. Speak better.</Text>
       </Animated.View>
 
-      {/* Loader */}
-      <View style={styles.loaderContainer}>
+      {/* Animated Loader */}
+      <Animated.View 
+        style={[
+          styles.loaderContainer,
+          { opacity: loaderOpacity }
+        ]}
+      >
         <ActivityIndicator size="small" color="#1F3B1F" />
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -77,16 +98,24 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 4,
     color: "#1F3B1F",
+    ...Platform.select({
+      ios: {
+        fontWeight: "900",
+      },
+      android: {
+        fontFamily: "sans-serif-medium", // Better rendering on Android
+      },
+    }),
   },
   tagline: {
     marginTop: 12,
     fontSize: 14,
     color: "#6B7280",
     letterSpacing: 0.5,
+    fontWeight: "400",
   },
   loaderContainer: {
     position: "absolute",
     bottom: 80,
   },
-  
 });
