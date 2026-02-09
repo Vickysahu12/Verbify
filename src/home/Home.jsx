@@ -31,10 +31,30 @@ const HomeScreen = () => {
       {/* 🔹 SCROLLABLE CONTENT */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 140 }}
       >
-        {/* Spacer so content doesn't hide behind header */}
         <View style={{ height: 110 }} />
+
+        {/* 🔹 HERO READINESS CARD */}
+        <View style={styles.heroCard}>
+          <View>
+            <Text style={styles.heroLabel}>CAT Readiness</Text>
+            <Text style={styles.heroScore}>68%</Text>
+            <Text style={styles.heroDelta}>+4% this week</Text>
+          </View>
+
+          <View style={styles.heroRight}>
+            <View style={styles.heroMini}>
+              <Text style={styles.heroMiniValue}>🔥 15</Text>
+              <Text style={styles.heroMiniLabel}>Day Streak</Text>
+            </View>
+
+            <View style={styles.heroMini}>
+              <Text style={styles.heroMiniValue}>📘 450</Text>
+              <Text style={styles.heroMiniLabel}>Words</Text>
+            </View>
+          </View>
+        </View>
 
         {/* 🔹 TODAY'S FOCUS */}
         <View style={styles.focusCard}>
@@ -43,7 +63,8 @@ const HomeScreen = () => {
             VARC Practice • 70 minutes
           </Text>
 
-          {/* Progress bar */}
+          <Text style={styles.focusProgress}>40% completed</Text>
+
           <View style={styles.progressBarBg}>
             <View style={styles.progressBarFill} />
           </View>
@@ -55,21 +76,19 @@ const HomeScreen = () => {
 
         {/* 🔹 PRACTICE */}
         <Text style={styles.sectionTitle}>Practice</Text>
-
         <View style={styles.grid}>
-          <PracticeCard title="Vocabulary" subtitle="10 / 20 words" />
-          <PracticeCard title="Reading" subtitle="12 min article" />
-          <PracticeCard title="RC Practice" subtitle="2 passages" />
-          <PracticeCard title="VA Practice" subtitle="Para Jumble • OOO" />
+          <PracticeCard icon="🔤" title="Vocabulary" subtitle="10 / 20 words" />
+          <PracticeCard icon="📘" title="Reading" subtitle="12 min article" />
+          <PracticeCard icon="📄" title="RC Practice" subtitle="2 passages" />
+          <PracticeCard icon="🧩" title="VA Practice" subtitle="Para Jumble • OOO" />
         </View>
 
         {/* 🔹 TESTS */}
         <Text style={styles.sectionTitle}>Tests</Text>
-
         <View style={styles.testGrid}>
-          <TestCard title="RC Test" subtitle="2 passages" />
-          <TestCard title="Vocab Test" subtitle="20 questions" />
-          <TestCard title="VA Test" subtitle="Para jumble, OOO" />
+          <TestCard title="RC Test" status="Not attempted" />
+          <TestCard title="Vocab Test" status="Avg 62%" />
+          <TestCard title="VA Test" status="Last: 2 days ago" />
         </View>
 
         {/* 🔹 WEEKLY SNAPSHOT */}
@@ -80,6 +99,18 @@ const HomeScreen = () => {
             <Text style={styles.weekStat}>⏱ 4h 20m studied</Text>
             <Text style={styles.weekStat}>🔥 3-day streak</Text>
           </View>
+
+          <View style={styles.weekDots}>
+            {[1, 2, 3, 4, 5, 6, 7].map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  i === 3 && { backgroundColor: "#1F3B1F" },
+                ]}
+              />
+            ))}
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -88,20 +119,24 @@ const HomeScreen = () => {
 
 export default HomeScreen;
 
-/* 🔹 Cards */
-const PracticeCard = ({ title, subtitle }) => (
+/* 🔹 COMPONENTS */
+
+const PracticeCard = ({ icon, title, subtitle }) => (
   <TouchableOpacity style={styles.practiceCard}>
+    <Text style={styles.practiceIcon}>{icon}</Text>
     <Text style={styles.cardTitle}>{title}</Text>
     <Text style={styles.cardSub}>{subtitle}</Text>
   </TouchableOpacity>
 );
 
-const TestCard = ({ title, subtitle }) => (
+const TestCard = ({ title, status }) => (
   <TouchableOpacity style={styles.testCard}>
     <Text style={styles.cardTitle}>{title}</Text>
-    <Text style={styles.cardSub}>{subtitle}</Text>
+    <Text style={styles.testStatus}>{status}</Text>
   </TouchableOpacity>
 );
+
+/* 🔹 STYLES */
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -109,7 +144,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAF6",
   },
 
-  /* 🔹 STICKY HEADER */
   stickyHeader: {
     position: "absolute",
     top: 0,
@@ -145,7 +179,56 @@ const styles = StyleSheet.create({
     tintColor: "#1F3B1F",
   },
 
-  /* Focus */
+  /* HERO */
+  heroCard: {
+    marginHorizontal: 20,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 28,
+  },
+
+  heroLabel: {
+    fontSize: 13,
+    color: "#6B7280",
+  },
+
+  heroScore: {
+    fontSize: 34,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  heroDelta: {
+    fontSize: 13,
+    color: "#16A34A",
+    marginTop: 2,
+  },
+
+  heroRight: {
+    justifyContent: "space-between",
+  },
+
+  heroMini: {
+    alignItems: "flex-end",
+  },
+
+  heroMiniValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color:"#000"
+  },
+
+  heroMiniLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+  },
+
+  /* FOCUS */
   focusCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -166,13 +249,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#111827",
-    marginBottom: 12,
+  },
+
+  focusProgress: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginVertical: 8,
   },
 
   progressBarBg: {
-    height: 6,
+    height: 8,
     backgroundColor: "#E5E7EB",
-    borderRadius: 6,
+    borderRadius: 8,
     marginBottom: 16,
     overflow: "hidden",
   },
@@ -221,11 +309,16 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
 
+  practiceIcon: {
+    fontSize: 22,
+    marginBottom: 6,
+  },
+
   cardTitle: {
     fontSize: 15,
     fontWeight: "600",
     color: "#111827",
-    marginBottom: 6,
+    marginBottom: 4,
   },
 
   cardSub: {
@@ -248,6 +341,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: "dashed",
     borderColor: "#E5E7EB",
+  },
+
+  testStatus: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 4,
   },
 
   progressCard: {
@@ -274,5 +373,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#111827",
+  },
+
+  weekDots: {
+    flexDirection: "row",
+    marginTop: 12,
+  },
+
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E5E7EB",
+    marginRight: 6,
   },
 });
