@@ -276,7 +276,6 @@ const styles = StyleSheet.create({
   backgroundColor: "#FFF",
   marginHorizontal: 20,
   marginTop: 6,
-  // ⬅️ NEW
   borderRadius: 16,
   paddingHorizontal: 14,
   paddingVertical: 14, // ⬅️ slightly more
