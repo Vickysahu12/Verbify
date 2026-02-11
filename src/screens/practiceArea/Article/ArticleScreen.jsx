@@ -281,6 +281,8 @@ const styles = StyleSheet.create({
   paddingVertical: 14, // ⬅️ slightly more
   borderWidth: 1,
   borderColor: "#E5E7EB",
+
+  
 },
 
   searchIcon: { marginRight: 8 },
