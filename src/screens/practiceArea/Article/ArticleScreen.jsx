@@ -285,6 +285,8 @@ const styles = StyleSheet.create({
   
 },
 
+
+
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 14 },
 
