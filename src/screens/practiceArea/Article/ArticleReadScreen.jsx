@@ -4,32 +4,33 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   Dimensions,
+  StatusBar,
+  Image,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { articles } from "../../practiceArea/Article/data/Article"
+import { SafeAreaView } from "react-native-safe-area-context";
+import { articles } from "../../practiceArea/Article/data/Article";
+import Backbutton from "../../../assets/icon/backbutton.png";
 
 const { width } = Dimensions.get("window");
 
 const ArticleReadScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const { articleId } = route.params || {};
 
-  const { articleId } = route.params || {}; // safe destructuring
-
-  // Find article by id
-  const article = articles.find(a => a.id === articleId);
+  const article = articles.find((a) => a.id === articleId);
 
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [showButton, setShowButton] = useState(false);
 
-  // Prevent crash if article not found
   if (!article) {
     return (
-      <View style={styles.container}>
-        <Text style={{ padding: 20 }}>Article not found.</Text>
-      </View>
+      <SafeAreaView style={styles.center}>
+        <Text>Article not found.</Text>
+      </SafeAreaView>
     );
   }
 
@@ -41,77 +42,90 @@ const ArticleReadScreen = () => {
       contentOffset.y /
       (contentSize.height - layoutMeasurement.height);
 
-    setScrollProgress(progress > 1 ? 1 : progress);
+    const finalProgress = progress > 1 ? 1 : progress;
+
+    setScrollProgress(finalProgress);
+
+    // Show button only when near end (95%)
+    if (finalProgress >= 0.5) {
+      setShowButton(true);
+    } else {
+      setShowButton(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      {/* PROGRESS BAR */}
-      <View style={styles.progressBarBackground}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* 🔹 Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          activeOpacity={0.7}
+        >
+          <Image
+            source={Backbutton}
+            style={styles.backIcon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTop}>Article Reading</Text>
+          <Text style={styles.headerBottom}>CAT Prep Series</Text>
+        </View>
+
+        <View style={{ width: 40 }} />
+      </View>
+
+      {/* 🔹 Progress Bar */}
+      <View style={styles.progressBackground}>
         <View
           style={[
-            styles.progressBarFill,
+            styles.progressFill,
             { width: `${scrollProgress * 100}%` },
           ]}
         />
       </View>
 
+      {/* 🔹 Content */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={styles.scrollContent}
       >
-        <Image source={article.image} style={styles.image} />
+        <Text style={styles.tag}>{article.tag}</Text>
 
-        <View style={styles.content}>
-          <Text style={styles.tag}>{article.tag}</Text>
+        <Text style={styles.title}>{article.title}</Text>
 
-          <Text style={styles.title}>{article.title}</Text>
+        <Text style={styles.author}>{article.meta}</Text>
 
-          <View style={styles.metaRow}>
-            <Text style={styles.meta}>{article.meta}</Text>
+        {article.content?.map((para, index) => (
+          <Text key={index} style={styles.paragraph}>
+            {para}
+          </Text>
+        ))}
 
-            <View
-              style={[
-                styles.levelBadge,
-                { backgroundColor: article.levelColor },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.levelText,
-                  { color: article.levelText },
-                ]}
-              >
-                {article.level}
-              </Text>
-            </View>
-          </View>
-
-          {/* ✅ DYNAMIC CONTENT */}
-          {article.content?.map((para, index) => (
-            <Text key={index} style={styles.paragraph}>
-              {para}
+        {/* ✅ Button only when article ends */}
+        {showButton && (
+          <TouchableOpacity
+            style={styles.simpleButton}
+            onPress={() =>
+              navigation.navigate("ArticleDetail", {
+                articleId: article.id,
+              })
+            }
+          >
+            <Text style={styles.simpleButtonText}>
+              Analyze This Passage →
             </Text>
-          ))}
-        </View>
+          </TouchableOpacity>
+        )}
       </ScrollView>
-
-      {/* ANALYZE BUTTON */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() =>
-          navigation.navigate("ArticleAnalyze", {
-            articleId: article.id, // pass only id
-          })
-        }
-      >
-        <Text style={styles.buttonText}>
-          Analyze This Passage →
-        </Text>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -123,84 +137,115 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAF6",
   },
 
-  progressBarBackground: {
-    height: 4,
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  /* HEADER */
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#F9FAF6",
+  },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  backIcon: {
+    width: 22,
+    height: 22,
+  },
+
+  headerCenter: {
+    alignItems: "center",
+  },
+
+  headerTop: {
+    fontSize: 11,
+    letterSpacing: 1,
+    fontWeight: "700",
+    color: "#1F3B1F",
+  },
+
+  headerBottom: {
+    fontSize: 12,
+    color: "#6B7280",
+  },
+
+  /* PROGRESS BAR */
+
+  progressBackground: {
+    height: 3,
     backgroundColor: "#E5E7EB",
   },
 
-  progressBarFill: {
+  progressFill: {
     height: "100%",
     backgroundColor: "#1F3B1F",
   },
 
-  image: {
-    width: "100%",
-    height: 240,
-  },
+  /* CONTENT */
 
-  content: {
-    padding: 20,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
 
   tag: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#1F3B1F",
     letterSpacing: 1,
+    marginBottom: 8,
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: width < 380 ? 24 : 28,
+    fontWeight: "800",
     color: "#111827",
-    marginTop: 6,
-  },
-
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
+    lineHeight: 34,
     marginBottom: 12,
   },
 
-  meta: {
-    fontSize: 13,
+  author: {
+    fontSize: 14,
     color: "#6B7280",
-    marginRight: 10,
+    marginBottom: 20,
   },
 
   paragraph: {
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: 17,
+    lineHeight: 28,
     color: "#374151",
-    marginTop: 16,
+    marginBottom: 18,
+    letterSpacing: 0.3,
   },
 
-  levelBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
+  /* SIMPLE END BUTTON */
 
-  levelText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-
-  button: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    right: 16,
+  simpleButton: {
+    marginTop: 30,
+    marginBottom: 40,
     backgroundColor: "#1F3B1F",
-    padding: 18,
-    borderRadius: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
   },
 
-  buttonText: {
+  simpleButtonText: {
     color: "#FFF",
-    fontWeight: "700",
     fontSize: 15,
+    fontWeight: "600",
   },
 });
