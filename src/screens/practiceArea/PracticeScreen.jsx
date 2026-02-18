@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
+  RefreshControl,
+  ActivityIndicator,
+  Platform,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import Backbutton from "../../assets/icon/backbutton.png"
+import Icon from "react-native-vector-icons/Ionicons";
 
 const { width } = Dimensions.get("window");
 const scale = (s) => (width / 375) * s;
@@ -19,190 +25,252 @@ const DUMMY_WORD = {
   question: "Select the most accurate meaning:",
   options: ["Short-lived", "Permanent", "Transparent", "Weak"],
   correct: 0,
-  explanation:
-    "Ephemeral means lasting for a very short time.",
+  explanation: "Ephemeral means lasting for a very short time.",
 };
-
 
 const PracticeScreen = () => {
   const navigation = useNavigation();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [userName, setUserName] = useState("Alex");
+  
+  const [goalData, setGoalData] = useState({
+    completed: 0,
+    total: 20,
+    streak: 0,
+  });
+
+  const [modules, setModules] = useState([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Set goal data
+      setGoalData({
+        completed: 7,
+        total: 20,
+        streak: 5,
+      });
+
+      // Set modules
+      setModules([
+        {
+          id: 'vocab',
+          title: 'VOCAB',
+          description: 'Master 500+ high-frequency CAT words and context usage.',
+          progress: 45,
+          tag: 'HIGH PRIORITY',
+          tagStyle: 'highPriority',
+          buttons: [
+            { label: 'Learn', screen: 'VocabLearning' },
+            { label: 'Practice', screen: 'Vocab', params: { wordData: DUMMY_WORD } }
+          ]
+        },
+        {
+          id: 'rc',
+          title: 'RC',
+          description: '3 passages remaining for today\'s streak. Focus: Philosophy & Arts.',
+          progress: 12,
+          tag: 'NEW CONTENT',
+          tagStyle: 'newContent',
+          buttons: [
+            { label: 'Read', screen: 'RcRead' },
+            { label: 'Practice', screen: 'RC' }
+          ]
+        },
+        {
+          id: 'essay',
+          title: 'ESSAY / ARTICLE',
+          description: 'Daily editorial analysis from The Guardian and AEON.',
+          progress: 80,
+          tag: null,
+          buttons: [
+            { label: 'Read', screen: 'Article' },
+            { label: 'Analyse', screen: 'ArticleDetail' }
+          ]
+        },
+        {
+          id: 'va',
+          title: 'VERBAL ABILITY',
+          description: 'Parajumbles, Odd One Out, and Critical Reasoning drills.',
+          progress: 30,
+          tag: null,
+          buttons: [
+            { label: 'Concepts', screen: 'VaConcept' },
+            { label: 'Practice', screen: 'VA' }
+          ]
+        },
+      ]);
+
+    } catch (error) {
+      console.log('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.safe, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#1F3B1F" />
+        <Text style={styles.loadingText}>Loading modules...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        stickyHeaderIndices={[0]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#1F3B1F"]}
+            tintColor="#1F3B1F"
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Image
+            source={Backbutton}
+            style={styles.backIcon}
+            resizeMode="contain"
+          />
+          </TouchableOpacity>
+          
           <Text style={styles.headerTitle}>
-            Ready to Ace the CAT, Alex?
+            Ready to Ace the CAT, {userName}?
           </Text>
+          
+          <View style={{ width: 40 }} />
         </View>
 
         {/* Daily Goal Tracker */}
         <View style={styles.goalCard}>
           <View style={styles.goalTop}>
             <Text style={styles.goalTitle}>Daily Goal Tracker</Text>
-            <Text style={styles.goalCount}>7/20</Text>
+            <Text style={styles.goalCount}>
+              {goalData.completed}/{goalData.total}
+            </Text>
           </View>
 
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: "35%" }]} />
+            <View 
+              style={[
+                styles.progressFill, 
+                { width: `${(goalData.completed / goalData.total) * 100}%` }
+              ]} 
+            />
           </View>
 
           <Text style={styles.goalSub}>
-            7/20 Questions solved today. You're on a 5-day streak!
+            {goalData.completed}/{goalData.total} Questions solved today. 
+            You're on a {goalData.streak}-day streak! 🔥
           </Text>
         </View>
 
         {/* Section Title */}
         <Text style={styles.sectionTitle}>Study Modules</Text>
 
-        
-        {/* VOCAB */}
-<View style={styles.card}>
-  <Text style={[styles.tag, styles.highPriority]}>
-    HIGH PRIORITY
-  </Text>
+        {/* Module Cards */}
+        {modules.map((module) => (
+          <ModuleCard 
+            key={module.id}
+            module={module}
+            navigation={navigation}
+          />
+        ))}
 
-  <Text style={styles.cardTitle}>VOCAB</Text>
-  <Text style={styles.cardDesc}>
-    Master 500+ high-frequency CAT words and context usage.
-  </Text>
-
-  <View style={styles.cardBottom}>
-    <View style={styles.cardProgress}>
-      <View style={[styles.cardProgressFill, { width: "45%" }]} />
-    </View>
-    <Text style={styles.percent}>45%</Text>
-  </View>
-
-  {/* 🔥 Dual CTA */}
-  <View style={styles.dualCTA}>
-    <TouchableOpacity
-      style={[styles.ctaSmall, styles.ctaPrimary]}
-      onPress={() => navigation.navigate("VocabLearning")}
-    >
-      <Text style={styles.ctaPrimaryText}>Learn</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-  style={[styles.ctaSmall, styles.ctaSecondary]}
-  onPress={() =>
-    navigation.navigate("Vocab", {
-      wordData: DUMMY_WORD,
-    })
-  }
->
-  <Text style={styles.ctaSecondaryText}>Practice</Text>
-</TouchableOpacity>
-
-  </View>
-</View>
-
-        {/* RC */}
-        {/* RC */}
-<View style={styles.card}>
-  <Text style={[styles.tag, styles.newContent]}>
-    NEW CONTENT
-  </Text>
-
-  <Text style={styles.cardTitle}>RC</Text>
-  <Text style={styles.cardDesc}>
-    3 passages remaining for today's streak. Focus: Philosophy & Arts.
-  </Text>
-
-  <View style={styles.cardBottom}>
-    <View style={styles.cardProgress}>
-      <View style={[styles.cardProgressFill, { width: "12%" }]} />
-    </View>
-    <Text style={styles.percent}>12%</Text>
-  </View>
-
-  <View style={styles.dualCTA}>
-    <TouchableOpacity
-      style={[styles.ctaSmall, styles.ctaPrimary]}
-      onPress={() => navigation.navigate("RcRead")}
-    >
-      <Text style={styles.ctaPrimaryText}>Read</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      style={[styles.ctaSmall, styles.ctaSecondary]}
-      onPress={() => navigation.navigate("RC")}
-    >
-      <Text style={styles.ctaSecondaryText}>Practice</Text>
-    </TouchableOpacity>
-  </View>
-</View>
-
-
-        {/* ESSAY */}
-        {/* ESSAY */}
-<View style={styles.card}>
-  <Text style={styles.cardTitle}>ESSAY / ARTICLE</Text>
-  <Text style={styles.cardDesc}>
-    Daily editorial analysis from The Guardian and AEON.
-  </Text>
-
-  <View style={styles.cardBottom}>
-    <View style={styles.cardProgress}>
-      <View style={[styles.cardProgressFill, { width: "80%" }]} />
-    </View>
-    <Text style={styles.percent}>80%</Text>
-  </View>
-
-  <View style={styles.dualCTA}>
-    <TouchableOpacity
-      style={[styles.ctaSmall, styles.ctaPrimary]}
-      onPress={() => navigation.navigate("Article")}
-    >
-      <Text style={styles.ctaPrimaryText}>Read</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      style={[styles.ctaSmall, styles.ctaSecondary]}
-      onPress={() => navigation.navigate("ArticleDetail")}
-    >
-      <Text style={styles.ctaSecondaryText}>Analyse</Text>
-    </TouchableOpacity>
-  </View>
-</View>
-
-        {/* VA */}
-        {/* VA */}
-<View style={styles.card}>
-  <Text style={styles.cardTitle}>VERBAL ABILITY</Text>
-  <Text style={styles.cardDesc}>
-    Parajumbles, Odd One Out, and Critical Reasoning drills.
-  </Text>
-
-  <View style={styles.cardBottom}>
-    <View style={styles.cardProgress}>
-      <View style={[styles.cardProgressFill, { width: "30%" }]} />
-    </View>
-    <Text style={styles.percent}>30%</Text>
-  </View>
-
-  <View style={styles.dualCTA}>
-    <TouchableOpacity
-      style={[styles.ctaSmall, styles.ctaPrimary]}
-      onPress={() => navigation.navigate("VaConcept")}
-    >
-      <Text style={styles.ctaPrimaryText}>Concepts</Text>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      style={[styles.ctaSmall, styles.ctaSecondary]}
-      onPress={() => navigation.navigate("VA")}
-    >
-      <Text style={styles.ctaSecondaryText}>Practice</Text>
-    </TouchableOpacity>
-  </View>
-</View>
-
+        {modules.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>📚</Text>
+            <Text style={styles.emptyText}>No modules available</Text>
+            <Text style={styles.emptySubtext}>
+              Check back later for new content!
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
+
+/* MODULE CARD COMPONENT */
+const ModuleCard = ({ module, navigation }) => (
+  <View style={styles.card}>
+    {module.tag && (
+      <Text style={[styles.tag, styles[module.tagStyle]]}>
+        {module.tag}
+      </Text>
+    )}
+
+    <Text style={styles.cardTitle}>{module.title}</Text>
+    <Text style={styles.cardDesc}>{module.description}</Text>
+
+    <View style={styles.cardBottom}>
+      <View style={styles.cardProgress}>
+        <View 
+          style={[
+            styles.cardProgressFill, 
+            { width: `${module.progress}%` }
+          ]} 
+        />
+      </View>
+      <Text style={styles.percent}>{module.progress}%</Text>
+    </View>
+
+    <View style={styles.dualCTA}>
+      {module.buttons.map((button, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.ctaSmall,
+            index === 0 ? styles.ctaPrimary : styles.ctaSecondary
+          ]}
+          onPress={() => {
+            if (button.params) {
+              navigation.navigate(button.screen, button.params);
+            } else {
+              navigation.navigate(button.screen);
+            }
+          }}
+          activeOpacity={0.8}
+        >
+          <Text 
+            style={
+              index === 0 ? styles.ctaPrimaryText : styles.ctaSecondaryText
+            }
+          >
+            {button.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  </View>
+);
 
 export default PracticeScreen;
 
@@ -212,27 +280,64 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAF6",
     paddingHorizontal: scale(16),
   },
-header: {
-  backgroundColor: "#F9FAF6",   // same as screen
-  paddingVertical: scale(14),
-  paddingHorizontal: scale(4),
-},
-
-  headerTitle: {
-    fontSize: scale(18),
-    fontWeight: "700",
-    color: "#1F3B1F",
-    marginTop:30,
-    paddingLeft:50
+  
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#6B7280',
   },
 
-  /* Goal */
+  header: {
+    backgroundColor: "#F9FAF6",
+    paddingVertical: scale(14),
+    paddingHorizontal: scale(4),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? scale(10) : scale(30),
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  backIcon: {
+    width: 22,
+    height: 22,
+  },
+
+  headerTitle: {
+    flex: 1,
+    fontSize: scale(16),
+    fontWeight: "700",
+    color: "#1F3B1F",
+    textAlign: 'center',
+  },
+
   goalCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: scale(14),
     padding: scale(16),
     marginBottom: scale(20),
-    elevation: 2,
+    marginTop: 5,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
 
   goalTop: {
@@ -278,13 +383,22 @@ header: {
     marginBottom: scale(12),
   },
 
-  /* Cards */
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: scale(16),
     padding: scale(16),
     marginBottom: scale(20),
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
 
   tag: {
@@ -318,6 +432,7 @@ header: {
     fontSize: scale(13),
     color: "#4B5563",
     marginBottom: scale(14),
+    lineHeight: scale(18),
   },
 
   cardBottom: {
@@ -346,50 +461,71 @@ header: {
     color: "#1F3B1F",
   },
 
-  cta: {
-    backgroundColor: "#1F3B1F",
-    paddingVertical: scale(10),
+  dualCTA: {
+    flexDirection: "row",
+    gap: scale(12),
+  },
+
+  ctaSmall: {
+    flex: 1,
+    paddingVertical: scale(12),
     borderRadius: scale(10),
     alignItems: "center",
   },
 
-  ctaText: {
+  ctaPrimary: {
+    backgroundColor: "#1F3B1F",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#1F3B1F",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+
+  ctaSecondary: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "#1F3B1F",
+  },
+
+  ctaPrimaryText: {
     color: "#FFFFFF",
     fontSize: scale(14),
     fontWeight: "700",
   },
-  dualCTA: {
-  flexDirection: "row",
-  gap: scale(12),
-},
 
-ctaSmall: {
-  flex: 1,
-  paddingVertical: scale(10),
-  borderRadius: scale(10),
-  alignItems: "center",
-},
+  ctaSecondaryText: {
+    color: "#1F3B1F",
+    fontSize: scale(14),
+    fontWeight: "700",
+  },
 
-ctaPrimary: {
-  backgroundColor: "#1F3B1F",
-},
-
-ctaSecondary: {
-  backgroundColor: "#FFFFFF",
-  borderWidth: 1,
-  borderColor: "#1F3B1F",
-},
-
-ctaPrimaryText: {
-  color: "#FFFFFF",
-  fontSize: scale(13),
-  fontWeight: "700",
-},
-
-ctaSecondaryText: {
-  color: "#1F3B1F",
-  fontSize: scale(13),
-  fontWeight: "700",
-},
-
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  
+  emptySubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
 });

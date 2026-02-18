@@ -18,7 +18,7 @@ import RcReadingScreen from "../screens/practiceArea/RC/RcReadingScreen";
 
 // VA
 import VaScreen from "../screens/practiceArea/VA/VaScreen";
-import VaConcept from "../screens/practiceArea/VA/VaConcept";
+import VaConcept from "../screens/practiceArea/VA/VaHubScreen";
 
 const Stack = createNativeStackNavigator();
 
