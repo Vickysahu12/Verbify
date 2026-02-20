@@ -8,8 +8,10 @@ import {
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 
 const VAHubScreen = () => {
+  const navigation = useNavigation();
   const [openIndex, setOpenIndex] = useState(null);
 
   const toggle = (i) => {
@@ -49,7 +51,10 @@ const VAHubScreen = () => {
             Solve today's Parajumble to maintain your 5-day streak!
           </Text>
 
-          <TouchableOpacity style={styles.startButton}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={() => navigation.navigate("Parajumble")}
+          >
             <Text style={styles.startButtonText}>
               Start Challenge
             </Text>
@@ -63,27 +68,43 @@ const VAHubScreen = () => {
           <Text style={styles.progressLink}>View Progress</Text>
         </View>
 
-        {renderModule("Parajumbles", "Mastering chronological flow", 82)}
-        {renderModule("Odd One Out", "Identifying the outlier theme", 45)}
-        {renderModule("Para-Summary", "Extracting the core essence", 12)}
+        {renderModule(
+          "Parajumbles",
+          "Mastering chronological flow",
+          82,
+          () => navigation.navigate("Parajumble")
+        )}
+
+        {renderModule(
+          "Odd One Out",
+          "Identifying the outlier theme",
+          45,
+          () => {navigation.navigate("OddOne")}
+        )}
+
+        {renderModule(
+          "Para-Summary",
+          "Extracting the core essence",
+          12,
+          () => {}
+        )}
 
         {/* ================= CORE STRATEGIES ================= */}
 
         <View style={[styles.sectionHeader, { marginTop: 20 }]}>
-  <Text style={styles.sectionTitle}>Core Strategies</Text>
-</View>
-
+          <Text style={styles.sectionTitle}>Core Strategies</Text>
+        </View>
 
         {renderAccordion(
           0,
           "Identifying Opening Sentences",
-          "Look for broad contextual statements. Avoid sentences starting with pronouns like 'He', 'She', 'This'."
+          "Look for broad contextual statements. Avoid sentences starting with pronouns."
         )}
 
         {renderAccordion(
           1,
           "Connecting Transition Words",
-          "Track words like However, Therefore, Moreover to understand logical flow and paragraph linkage."
+          "Track words like However, Therefore, Moreover."
         )}
 
         <View style={{ height: 40 }} />
@@ -108,13 +129,6 @@ const VAHubScreen = () => {
         {isOpen && (
           <View style={styles.accordionBody}>
             <Text style={styles.accordionText}>{content}</Text>
-
-            <View style={styles.tipBox}>
-              <Text style={styles.tipTitle}>💡 Strategy Insight</Text>
-              <Text style={styles.tipText}>
-                Practice applying this rule in 5 daily questions.
-              </Text>
-            </View>
           </View>
         )}
       </TouchableOpacity>
@@ -125,10 +139,13 @@ const VAHubScreen = () => {
 export default VAHubScreen;
 
 /* ================= COMPONENT HELPERS ================= */
-
-const renderModule = (title, subtitle, progress) => {
+const renderModule = (title, subtitle, progress, onPress) => {
   return (
-    <View style={styles.moduleCard}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      style={styles.moduleCard}
+      onPress={onPress}
+    >
       <View style={styles.moduleTop}>
         <View>
           <Text style={styles.moduleTitle}>{title}</Text>
@@ -147,12 +164,12 @@ const renderModule = (title, subtitle, progress) => {
         />
       </View>
 
-      <TouchableOpacity style={styles.learnButton}>
+      <View style={styles.learnButton}>
         <Text style={styles.learnButtonText}>
           Learn the Strategy
         </Text>
-      </TouchableOpacity>
-    </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 

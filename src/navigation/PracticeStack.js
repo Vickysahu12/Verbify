@@ -19,6 +19,9 @@ import RcReadingScreen from "../screens/practiceArea/RC/RcReadingScreen";
 // VA
 import VaScreen from "../screens/practiceArea/VA/VaScreen";
 import VaConcept from "../screens/practiceArea/VA/VaHubScreen";
+import ParajumbleScreen from "../screens/practiceArea/VA/ParaJumbleScreen";
+import OddOneOutScreen from "../screens/practiceArea/VA/OddOneOutScreen";
+import ParaSummaryScreen from "../screens/practiceArea/VA/ParaSummaryScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -46,6 +49,9 @@ const PracticeStack = () => {
       {/* VA FLOW */}
       <Stack.Screen name="VA" component={VaScreen} />
       <Stack.Screen name="VaConcept" component={VaConcept}/>
+      <Stack.Screen name="Parajumble" component={ParajumbleScreen}/>
+      <Stack.Screen name="OddOne" component={OddOneOutScreen}/>
+      <Stack.Screen name="Parasum" component={ParaSummaryScreen}/>
 
     </Stack.Navigator>
   );
