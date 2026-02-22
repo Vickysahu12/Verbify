@@ -492,6 +492,8 @@ backBtn: {
 
   
 
+  
+
   explainSuccess: {
     backgroundColor: "#ECFDF5",
     borderColor: '#1F3B1F',
