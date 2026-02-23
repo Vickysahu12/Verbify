@@ -483,6 +483,8 @@ backBtn: {
     fontWeight: '500',
   },
 
+  
+
   explainCard: {
     padding: 16,
     borderRadius: 16,
