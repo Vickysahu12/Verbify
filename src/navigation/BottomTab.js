@@ -5,7 +5,7 @@ import { Image, Text, View, Platform } from "react-native";
 import HomeScreen from "../home/Home";
 import PracticeStack from "../navigation/PracticeStack"
 //import PracticeScreen from "../screens/practiceArea/PracticeScreen";
-import TestsScreen from "../screens/TestsScreen";
+import TestsScreen from "../screens/MockPortal/TestsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();

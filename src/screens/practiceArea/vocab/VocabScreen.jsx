@@ -483,18 +483,12 @@ backBtn: {
     fontWeight: '500',
   },
 
-  
-
   explainCard: {
     padding: 16,
     borderRadius: 16,
     marginTop: 20,
     borderWidth: 2,
   },
-
-  
-
-  
 
   explainSuccess: {
     backgroundColor: "#ECFDF5",

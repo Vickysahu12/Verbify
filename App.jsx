@@ -8,6 +8,7 @@ import SplashScreen from "./src/SplashScreen";
 import OnBoardingScreen from "./src/auth/OnBoardingScren";
 import RegisterScreen from "./src/auth/RegisterScreen";
 import LoginScreen from "./src/auth/LoginScreen";
+import NotificationScreen from "./src/NotificationScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,7 @@ const App = () => {
         <Stack.Screen name="Onboarding" component={OnBoardingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Notifications" component={NotificationScreen}/>
 
         {/* 🔥 MAIN APP AFTER LOGIN */}
         <Stack.Screen name="Main" component={BottomTabs} />

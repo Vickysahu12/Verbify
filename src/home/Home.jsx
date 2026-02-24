@@ -13,6 +13,7 @@ import {
   Platform,
   Animated,
 } from "react-native";
+import NotificationScreen from "../NotificationScreen";
 //import AsyncStorage from '@react-native-async-storage/async-storage';
 // import { userService } from '../services/userService'; // When backend ready
 
