@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,16 +8,138 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  LayoutAnimation,
+  UIManager,
+  Alert,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Ionicons";
+//import AsyncStorage from '@react-native-async-storage/async-storage';
+import backicon from "../../../assets/icon/backbutton.png"
 
 const { width } = Dimensions.get("window");
 const scale = (s) => (width / 375) * s;
 
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const COURSE_CONTENT = [
+  {
+    id: 1,
+    title: "Understanding Tone",
+    bullets: [
+      "Identify adjectives & adverbs revealing author sentiment.",
+      "Look for structural pivots like 'However', 'Yet'.",
+      "Notice intensity words: 'utterly', 'merely', 'profoundly'.",
+    ],
+    tip: "Frequent rhetorical questions often indicate a skeptical or inquisitive tone.",
+  },
+  {
+    id: 2,
+    title: "Identifying Main Idea",
+    bullets: [
+      "First & last paragraphs often contain thesis statements.",
+      "Look for repeated concepts or phrases.",
+      "Check for summarizing sentences with 'thus', 'therefore'.",
+    ],
+    tip: "The main idea is rarely in the middle—scan first and last lines.",
+  },
+  {
+    id: 3,
+    title: "Inference Questions",
+    bullets: [
+      "Don't extrapolate beyond what's stated.",
+      "Look for logical extensions of the author's argument.",
+      "Eliminate options that contradict the passage.",
+    ],
+    tip: "If you have to assume too much, it's probably wrong.",
+  },
+];
+
 const RCLearningScreen = () => {
+  const navigation = useNavigation();
+  
   const [openIndex, setOpenIndex] = useState(0);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState(new Set());
+  const [watchedVideo, setWatchedVideo] = useState(false);
+
+  const totalSteps = COURSE_CONTENT.length + 1;
+  const completedCount = completedSteps.size + (watchedVideo ? 1 : 0);
+  const progress = Math.round((completedCount / totalSteps) * 100);
+
+  useEffect(() => {
+    loadProgress();
+  }, []);
+
+  const loadProgress = async () => {
+    try {
+      const progress = await AsyncStorage.getItem('rc_progress') || '{}';
+      const data = JSON.parse(progress);
+      setCompletedSteps(new Set(data.completed || []));
+      setWatchedVideo(data.watchedVideo || false);
+      
+      const bookmarks = await AsyncStorage.getItem('rc_bookmarks') || '[]';
+      const list = JSON.parse(bookmarks);
+      setIsBookmarked(list.includes('rc_mastery_guide'));
+    } catch (error) {
+      console.log('Load progress error:', error);
+    }
+  };
+
+  const handleBookmark = async () => {
+    try {
+      const bookmarks = await AsyncStorage.getItem('rc_bookmarks') || '[]';
+      const list = JSON.parse(bookmarks);
+      
+      if (!isBookmarked) {
+        list.push('rc_mastery_guide');
+      } else {
+        const idx = list.indexOf('rc_mastery_guide');
+        if (idx > -1) list.splice(idx, 1);
+      }
+      
+      await AsyncStorage.setItem('rc_bookmarks', JSON.stringify(list));
+      setIsBookmarked(!isBookmarked);
+    } catch (error) {
+      console.log('Bookmark error:', error);
+    }
+  };
 
   const toggle = (i) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setOpenIndex(openIndex === i ? null : i);
+  };
+
+  const markStepComplete = async (stepId) => {
+    const newCompleted = new Set([...completedSteps, stepId]);
+    setCompletedSteps(newCompleted);
+    
+    await AsyncStorage.setItem('rc_progress', JSON.stringify({
+      completed: [...newCompleted],
+      watchedVideo,
+    }));
+  };
+
+  const handleStartQuiz = () => {
+    if (completedSteps.size < COURSE_CONTENT.length) {
+      Alert.alert(
+        'Complete the course',
+        'Please complete all sections before starting the quiz.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    // navigation.navigate('RCQuiz');
+    alert('Quiz feature coming soon!');
+  };
+
+  const handlePlayVideo = () => {
+    // TODO: Implement video player
+    alert('Video player coming soon!');
   };
 
   return (
@@ -26,99 +148,126 @@ const RCLearningScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: scale(140) }}
       >
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
         <View style={styles.header}>
-          <Text style={styles.back}>←</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="#1F3B1F" />
+          </TouchableOpacity>
+          
           <Text style={styles.headerTitle}>RC Mastery Guide</Text>
-          <Text style={styles.bookmark}>🔖</Text>
+          
+          <TouchableOpacity 
+            onPress={handleBookmark}
+            activeOpacity={0.7}
+          >
+            <Icon 
+              name={isBookmarked ? "bookmark" : "bookmark-outline"} 
+              size={24} 
+              color="#1F3B1F" 
+            />
+          </TouchableOpacity>
         </View>
 
-        {/* ================= PROGRESS ================= */}
+        {/* PROGRESS */}
         <View style={styles.progressWrap}>
           <Text style={styles.progressLabel}>COURSE PROGRESS</Text>
-          <Text style={styles.progressPercent}>45% Complete</Text>
+          <Text style={styles.progressPercent}>{progress}% Complete</Text>
         </View>
 
         <View style={styles.progressBar}>
-          <View style={styles.progressFill} />
+          <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
 
-        {/* ================= VIDEO CARD ================= */}
-        <View style={styles.videoCard}>
+        {/* VIDEO CARD */}
+        <TouchableOpacity 
+          style={styles.videoCard}
+          onPress={handlePlayVideo}
+          activeOpacity={0.9}
+        >
           <View style={styles.playBtn}>
-            <Text style={styles.playIcon}>▶</Text>
+            <Icon name="play" size={28} color="#F9FAF6" />
           </View>
 
           <View style={styles.videoBottom}>
             <Text style={styles.videoTitle}>
               RC Strategy: The Skimming & Scanning Method
             </Text>
-            <Text style={styles.videoTime}>04:12 / 12:45</Text>
-          </View>
-        </View>
-
-        {/* ================= FRAMEWORK ================= */}
-        <Text style={styles.sectionTitle}>📘 Strategic Framework</Text>
-
-        {/* STEP 1 */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={styles.accordion}
-          onPress={() => toggle(0)}
-        >
-          <View style={styles.accordionHeader}>
-            <Text style={styles.step}>1</Text>
-            <Text style={styles.accordionTitle}>Understanding Tone</Text>
-            <Text style={styles.arrow}>{openIndex === 0 ? "⌃" : "⌄"}</Text>
+            <Text style={styles.videoTime}>⏱ 12:45 • 👁 2.4K views</Text>
           </View>
 
-          {openIndex === 0 && (
-            <View style={styles.accordionBody}>
-              <Text style={styles.bullet}>
-                • Identify adjectives & adverbs revealing author sentiment.
-              </Text>
-              <Text style={styles.bullet}>
-                • Look for structural pivots like “However”, “Yet”.
-              </Text>
-
-              <View style={styles.tipBox}>
-                <Text style={styles.tipTitle}>💡 PRO TIP</Text>
-                <Text style={styles.tipText}>
-                  Frequent rhetorical questions often indicate a skeptical
-                  or inquisitive tone.
-                </Text>
-              </View>
+          {watchedVideo && (
+            <View style={styles.watchedBadge}>
+              <Icon name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={styles.watchedText}>Watched</Text>
             </View>
           )}
         </TouchableOpacity>
 
-        {/* STEP 2 */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={styles.accordion}
-          onPress={() => toggle(1)}
-        >
-          <View style={styles.accordionHeader}>
-            <Text style={styles.step}>2</Text>
-            <Text style={styles.accordionTitle}>Identifying Main Idea</Text>
-            <Text style={styles.arrow}>{openIndex === 1 ? "⌃" : "⌄"}</Text>
-          </View>
-        </TouchableOpacity>
+        {/* FRAMEWORK */}
+        <Text style={styles.sectionTitle}>📘 Strategic Framework</Text>
 
-        {/* STEP 3 */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={styles.accordion}
-          onPress={() => toggle(2)}
-        >
-          <View style={styles.accordionHeader}>
-            <Text style={styles.step}>3</Text>
-            <Text style={styles.accordionTitle}>Inference Questions</Text>
-            <Text style={styles.arrow}>{openIndex === 2 ? "⌃" : "⌄"}</Text>
-          </View>
-        </TouchableOpacity>
+        {COURSE_CONTENT.map((item, index) => (
+          <TouchableOpacity
+            key={item.id}
+            activeOpacity={0.85}
+            style={styles.accordion}
+            onPress={() => toggle(index)}
+          >
+            <View style={styles.accordionHeader}>
+              <View style={[
+                styles.step,
+                completedSteps.has(item.id) && styles.stepCompleted
+              ]}>
+                {completedSteps.has(item.id) ? (
+                  <Icon name="checkmark" size={16} color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.stepText}>{item.id}</Text>
+                )}
+              </View>
+              
+              <Text style={styles.accordionTitle}>{item.title}</Text>
+              
+              <Icon 
+                name={openIndex === index ? "chevron-up" : "chevron-down"} 
+                size={20} 
+                color="#1F3B1F" 
+              />
+            </View>
 
-        {/* ================= INTERACTIVE EXAMPLE ================= */}
+            {openIndex === index && (
+              <View style={styles.accordionBody}>
+                {item.bullets.map((bullet, i) => (
+                  <Text key={i} style={styles.bullet}>• {bullet}</Text>
+                ))}
+
+                <View style={styles.tipBox}>
+                  <Text style={styles.tipTitle}>💡 PRO TIP</Text>
+                  <Text style={styles.tipText}>{item.tip}</Text>
+                </View>
+
+                {!completedSteps.has(item.id) ? (
+                  <TouchableOpacity 
+                    style={styles.markCompleteBtn}
+                    onPress={() => markStepComplete(item.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.markCompleteText}>✓ Mark as Complete</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.completedBadge}>
+                    <Icon name="checkmark-circle" size={16} color="#10B981" />
+                    <Text style={styles.completedText}>Completed</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+
+        {/* INTERACTIVE EXAMPLE */}
         <Text style={styles.sectionTitle}>🧠 Interactive Example</Text>
 
         <View style={styles.passageCard}>
@@ -134,7 +283,7 @@ const RCLearningScreen = () => {
 
         <View style={styles.infoBlue}>
           <Text style={styles.infoTitle}>
-            Structural Pivot: “However”
+            Structural Pivot: "However"
           </Text>
           <Text style={styles.infoText}>
             Indicates a shift from a positive belief to critical evaluation.
@@ -143,18 +292,29 @@ const RCLearningScreen = () => {
 
         <View style={styles.infoYellow}>
           <Text style={styles.infoTitle}>
-            Inference Marker: “This suggests”
+            Inference Marker: "This suggests"
           </Text>
           <Text style={styles.infoText}>
-            Signals the author’s central argument or conclusion.
+            Signals the author's central argument or conclusion.
           </Text>
         </View>
       </ScrollView>
 
-      {/* ================= CTA ================= */}
+      {/* CTA */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity activeOpacity={0.9} style={styles.cta}>
-          <Text style={styles.ctaText}>Start Practice Quiz →</Text>
+        <TouchableOpacity 
+          activeOpacity={0.9} 
+          style={[
+            styles.cta,
+            completedSteps.size < COURSE_CONTENT.length && styles.ctaDisabled
+          ]}
+          onPress={handleStartQuiz}
+        >
+          <Text style={styles.ctaText}>
+            {completedSteps.size < COURSE_CONTENT.length 
+              ? `Complete ${COURSE_CONTENT.length - completedSteps.size} more sections` 
+              : 'Start Practice Quiz →'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -162,8 +322,6 @@ const RCLearningScreen = () => {
 };
 
 export default RCLearningScreen;
-
-/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   safe: {
@@ -176,16 +334,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: scale(16),
     alignItems: "center",
-    marginTop: 25,
+    paddingTop: Platform.OS === 'ios' ? scale(10) : scale(40),
   },
 
-  back: { fontSize: 18 },
-  bookmark: { fontSize: 18 },
-
   headerTitle: {
-    fontSize: scale(16),
+    fontSize: scale(17),
     fontWeight: "800",
     color: "#1F3B1F",
+    flex: 1,
+    textAlign: 'center',
   },
 
   progressWrap: {
@@ -199,11 +356,12 @@ const styles = StyleSheet.create({
     fontSize: scale(11),
     fontWeight: "700",
     color: "#1F3B1F",
+    letterSpacing: 0.5,
   },
 
   progressPercent: {
     fontSize: scale(11),
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#1F3B1F",
   },
 
@@ -212,11 +370,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#DDE8E1",
     marginHorizontal: scale(16),
     borderRadius: 6,
-    marginTop: 6,
+    marginTop: 8,
+    overflow: 'hidden',
   },
 
   progressFill: {
-    width: "45%",
     height: "100%",
     backgroundColor: "#1F3B1F",
     borderRadius: 6,
@@ -229,21 +387,27 @@ const styles = StyleSheet.create({
     margin: scale(16),
     justifyContent: "center",
     alignItems: "center",
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
 
   playBtn: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#1F3B1F",
+    backgroundColor: "#10B981",
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  playIcon: {
-    color: "#F9FAF6",
-    fontSize: 22,
-    marginLeft: 2,
   },
 
   videoBottom: {
@@ -257,6 +421,7 @@ const styles = StyleSheet.create({
     color: "#F9FAF6",
     fontSize: 14,
     fontWeight: "700",
+    lineHeight: 20,
   },
 
   videoTime: {
@@ -265,11 +430,31 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  watchedBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+
+  watchedText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1F3B1F',
+  },
+
   sectionTitle: {
     fontSize: scale(16),
     fontWeight: "800",
     marginHorizontal: scale(16),
     marginTop: scale(26),
+    marginBottom: scale(4),
     color: "#1F3B1F",
   },
 
@@ -279,6 +464,17 @@ const styles = StyleSheet.create({
     marginHorizontal: scale(16),
     marginTop: 12,
     padding: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
 
   accordionHeader: {
@@ -288,56 +484,97 @@ const styles = StyleSheet.create({
 
   step: {
     backgroundColor: "#E9F2EC",
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    textAlign: "center",
-    textAlignVertical: "center",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  stepCompleted: {
+    backgroundColor: "#1F3B1F",
+  },
+
+  stepText: {
     fontWeight: "700",
     color: "#1F3B1F",
+    fontSize: 14,
   },
 
   accordionTitle: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 12,
     fontWeight: "700",
     color: "#1F3B1F",
-  },
-
-  arrow: {
-    fontSize: 14,
-    color: "#1F3B1F",
+    fontSize: 15,
   },
 
   accordionBody: {
-    marginTop: 12,
+    marginTop: 16,
   },
 
   bullet: {
     fontSize: 13,
-    marginBottom: 6,
+    marginBottom: 8,
     lineHeight: 20,
     color: "#374151",
   },
 
   tipBox: {
-    backgroundColor: "#E9F2EC",
-    padding: 12,
+    backgroundColor: "#FEF3C7",
+    padding: 14,
     borderRadius: 12,
-    marginTop: 10,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
   },
 
   tipTitle: {
     fontWeight: "700",
     fontSize: 12,
-    color: "#1F3B1F",
+    color: "#92400E",
   },
 
   tipText: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 6,
     lineHeight: 18,
-    color: "#374151",
+    color: "#78350F",
+  },
+
+  markCompleteBtn: {
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 14,
+  },
+
+  markCompleteText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  completedBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+
+  completedText: {
+    color: '#10B981',
+    fontSize: 13,
+    fontWeight: '700',
   },
 
   passageCard: {
@@ -345,24 +582,37 @@ const styles = StyleSheet.create({
     margin: scale(16),
     padding: 16,
     borderRadius: 18,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
 
   passage: {
     fontSize: 14,
-    lineHeight: 22,
+    lineHeight: 24,
     color: "#111827",
   },
 
   highlightBlue: {
     backgroundColor: "#DDE8E1",
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#1F3B1F",
+    paddingHorizontal: 4,
   },
 
   highlightYellow: {
     backgroundColor: "#F3EED9",
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#1F3B1F",
+    paddingHorizontal: 4,
   },
 
   infoBlue: {
@@ -371,6 +621,8 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#D1E7DD',
   },
 
   infoYellow: {
@@ -378,17 +630,19 @@ const styles = StyleSheet.create({
     marginHorizontal: scale(16),
     padding: 14,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F3EED9',
   },
 
   infoTitle: {
     fontWeight: "700",
     fontSize: 13,
     color: "#1F3B1F",
+    marginBottom: 4,
   },
 
   infoText: {
     fontSize: 12,
-    marginTop: 4,
     lineHeight: 18,
     color: "#374151",
   },
@@ -399,7 +653,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     backgroundColor: "#F9FAF6",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
 
   cta: {
@@ -409,12 +675,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  ctaDisabled: {
+    backgroundColor: "#9CA3AF",
+  },
+
   ctaText: {
     color: "#F9FAF6",
     fontSize: 15,
     fontWeight: "800",
   },
-  
-
-  
 });

@@ -5,7 +5,7 @@ import { Image, Text, View, Platform } from "react-native";
 import HomeScreen from "../home/Home";
 import PracticeStack from "../navigation/PracticeStack"
 //import PracticeScreen from "../screens/practiceArea/PracticeScreen";
-import TestsScreen from "../screens/MockPortal/TestsScreen";
+import MockPortalStack from "../navigation/MockPortalStack";
 import ProfileScreen from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
@@ -68,7 +68,7 @@ const BottomTabs = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Practice" component={PracticeStack} />
-      <Tab.Screen name="Tests" component={TestsScreen} />
+      <Tab.Screen name="Tests" component={MockPortalStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
