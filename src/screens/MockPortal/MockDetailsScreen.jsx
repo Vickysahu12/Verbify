@@ -16,11 +16,11 @@ const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 // ─── THEME ───────────────────────────────────────────────────────────────────
 const COLORS = {
-  primary:       '#1A7A4A',
+  primary:       '#1F3B1F',
   primaryLight:  '#E8F5EE',
   primaryMid:    '#2EA86B',
   primaryDark:   '#0F5C35',
-  accent:        '#F4A827',
+  accent:        '#1F3B1F',
   accentSoft:    '#FEF3DC',
   danger:        '#E05252',
   dangerSoft:    '#FDEAEA',
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    marginTop:15
+    paddingTop:35
   },
   backBtn: {width: 36, alignItems: 'flex-start'},
   backIconWrap: {

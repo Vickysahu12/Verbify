@@ -15,6 +15,7 @@ import ArticleReadScreen from "../screens/practiceArea/Article/ArticleReadScreen
 // RC
 import RcScreen from "../screens/practiceArea/RC/RcScreen";
 import RcReadingScreen from "../screens/practiceArea/RC/RcReadingScreen";
+import RCResultScreen from "../screens/practiceArea/RC/RcResultScreen";
 
 // VA
 import VaScreen from "../screens/practiceArea/VA/VaScreen";
@@ -44,6 +45,7 @@ const PracticeStack = () => {
       {/* RC FLOW */}
       <Stack.Screen name="RC" component={RcScreen} />
       <Stack.Screen name="RcRead" component={RcReadingScreen}/>
+      <Stack.Screen name="RcResult" component={RCResultScreen}/>
       
 
       {/* VA FLOW */}

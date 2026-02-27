@@ -14,7 +14,7 @@ import CategoryFilter from './componentss/CategoryFilters';
 
 // ─── THEME ───────────────────────────────────────────────────────────────────
 const COLORS = {
-  primary: '#1A7A4A',
+  primary: '#1F3B1F',
   surface: '#FFFFFF',
   surfaceAlt: '#F4F8F5',
   border: '#E0EDE6',
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
     // Sticky — rendered outside FlatList so it never scrolls
-    marginTop:20
+    paddingTop:35
   },
   backBtn: {
     width: 36,

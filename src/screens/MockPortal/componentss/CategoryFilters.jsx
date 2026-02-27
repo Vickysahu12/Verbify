@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  primary: '#1A7A4A',
+  primary: '#1F3B1F',
   primaryLight: '#E8F5EE',
   primaryMid: '#2EA86B',
   surface: '#FFFFFF',

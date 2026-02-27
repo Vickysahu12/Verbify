@@ -83,7 +83,7 @@ const PracticeScreen = () => {
           tag: 'NEW CONTENT',
           tagStyle: 'newContent',
           buttons: [
-            { label: 'Read', screen: 'RcRead' },
+            { label: 'Learn', screen: 'RcRead' },
             { label: 'Practice', screen: 'RC' }
           ]
         },
