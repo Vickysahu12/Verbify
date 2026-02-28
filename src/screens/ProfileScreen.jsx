@@ -344,6 +344,8 @@ const styles = StyleSheet.create({
     paddingTop:35
   },
 
+
+  
   iconBtn: {
     width: scale(38),
     height: scale(38),
