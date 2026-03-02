@@ -28,7 +28,7 @@ const MOCK_DATA = [
   {
     id: '1',
     title: 'CAT Full Mock #1',
-    subtitle: 'VARC · DILR · Quant',
+    subtitle: 'VARC',
     type: 'full',
     questions: 76,
     duration: '120 min',
@@ -43,7 +43,7 @@ const MOCK_DATA = [
   {
     id: '2',
     title: 'CAT Full Mock #2',
-    subtitle: 'VARC · DILR · Quant',
+    subtitle: 'VARC',
     type: 'full',
     questions: 76,
     duration: '120 min',
@@ -57,7 +57,7 @@ const MOCK_DATA = [
   {
     id: '3',
     title: 'Half Length Mock #1',
-    subtitle: 'VARC · DILR',
+    subtitle: 'VARC',
     type: 'half',
     questions: 38,
     duration: '60 min',
@@ -148,7 +148,7 @@ const MOCK_DATA = [
   {
     id: '8',
     title: 'CAT Full Mock #3',
-    subtitle: 'VARC · DILR · Quant',
+    subtitle: 'VARC',
     type: 'full',
     questions: 76,
     duration: '120 min',
