@@ -1,5 +1,3 @@
-// ExamScreen.js — Fully Dynamic Version
-// Connects to examData.js — no more hardcoded data
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -99,7 +97,7 @@ const getQuestionTypeLabel = (type) => {
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
-export default function ExamScreen({ route }) {
+export default function TestInterfaceScreen({ route }) {
   const navigation = useNavigation();
 
   // ── Load exam config from examData.js using mockId ──
@@ -580,17 +578,23 @@ export default function ExamScreen({ route }) {
 
       {/* ── SUBMIT MODAL ── */}
       <SubmitModal
-        visible={submitModalVisible}
-        onClose={() => setSubmitModalVisible(false)}
-        onConfirm={() => {
-          setSubmitModalVisible(false);
-          navigation.goBack();
-        }}
-        answeredCount={answeredCount}
-        totalQuestions={activeSection?.totalQuestions ?? QUESTIONS_DATA.length}
-        notAnsweredCount={notAnsweredCount + notVisitedCount}
-        markedCount={markedCount}
-      />
+      visible={submitModalVisible}
+      onClose={() => setSubmitModalVisible(false)}
+      onConfirm={() => {
+      setSubmitModalVisible(false);
+      // ─── CHANGE: goBack() → ResultScreen ke saath full data pass karo ───
+      navigation.navigate('Result', {
+      mockId,
+      questionMeta,
+      timeTaken: examConfig.totalSeconds - timeLeft,
+      examConfig,
+     });
+   }}
+    answeredCount={answeredCount}
+    totalQuestions={activeSection?.totalQuestions ?? QUESTIONS_DATA.length}
+    notAnsweredCount={notAnsweredCount + notVisitedCount}
+    markedCount={markedCount}
+  />
     </SafeAreaView>
   );
 }
@@ -690,13 +694,13 @@ const SubmitModal = ({
         </Text>
 
         <View style={submitM.actions}>
-          <TouchableOpacity style={submitM.cancelBtn} onPress={onClose} activeOpacity={0.8}>
-            <Text style={submitM.cancelText}>Go Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={submitM.confirmBtn} onPress={onConfirm} activeOpacity={0.85}>
-            <Text style={submitM.confirmText}>Submit  ›</Text>
-          </TouchableOpacity>
-        </View>
+  <TouchableOpacity style={submitM.cancelBtn} onPress={onClose} activeOpacity={0.8}>
+    <Text style={submitM.cancelText}>Go Back</Text>
+  </TouchableOpacity>
+  <TouchableOpacity style={submitM.confirmBtn} onPress={onConfirm} activeOpacity={0.85}>
+    <Text style={submitM.confirmText}>Submit  ›</Text>
+  </TouchableOpacity>
+</View>
       </View>
     </View>
   </Modal>
