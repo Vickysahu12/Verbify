@@ -1,286 +1,452 @@
 /**
  * NotificationScreen.jsx
- * Production-ready | Backend-ready | Responsive all screens
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Production-ready | Backend-ready | Consistent with Verbify design system
+ *
+ * BACKEND INTEGRATION GUIDE:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 1. FETCH ALL      → GET   /api/notifications          (Bearer token)
+ *    Response: { notifications: Notification[], unreadCount: number }
+ *
+ * 2. MARK ONE READ  → PATCH /api/notifications/:id/read  (Bearer token)
+ *
+ * 3. MARK ALL READ  → POST  /api/notifications/read-all  (Bearer token)
+ *
+ * 4. DISMISS ONE   → DELETE /api/notifications/:id       (Bearer token)
+ *
+ * Notification shape:
+ * {
+ *   id: string, category: 'mock'|'study'|'achievement'|'update',
+ *   icon: string (emoji), title: string, desc: string,
+ *   time: string, unread: boolean, actionScreen?: string
+ * }
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState, useCallback, useRef, useMemo, useEffect,
+} from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  Dimensions,
-  Platform,
-  Animated,
-  Image,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import backicon from "./assets/icon/backbutton.png";
+  View, Text, StyleSheet, SafeAreaView,
+  TouchableOpacity, ScrollView, StatusBar,
+  Dimensions, Platform, Animated,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const { width } = Dimensions.get("window");
-const scale = (s) => (width / 375) * s;
+const { width: SW } = Dimensions.get('window');
+const sc = n => (SW / 390) * n;
 
-// ─── Data shape (replace with API call) ──────────────────────────────────────
-// TODO: const res = await fetch("https://your-api.com/notifications", { headers: { Authorization: `Bearer ${token}` } });
-// returns: { notifications: Notification[], unreadCount: number }
-
-const NOTIFICATION_DATA = [
-  {
-    id: "n1", category: "mock", icon: "📘",
-    title: "VARC Sectional Mock 12 Live",
-    desc: "New reading comprehension focus test is now available. Time: 40 mins.",
-    time: "10 min ago", unread: true, actionUrl: "RcRead",
-  },
-  {
-    id: "n2", category: "mock", icon: "📊",
-    title: "Results: Full Mock #08",
-    desc: "Your performance analysis is ready. View rank now.",
-    time: "Yesterday", unread: false, actionUrl: "RcResult",
-  },
-  {
-    id: "n3", category: "study", icon: "⏰",
-    title: "Daily Vocab Practice",
-    desc: "Don't break your streak! Spend 10 mins on hard words.",
-    time: "2 hrs ago", unread: true, actionUrl: "VocabLearning",
-  },
-  {
-    id: "n4", category: "study", icon: "📝",
-    title: "Review Incorrect Answers",
-    desc: "You have 15 pending questions from last session.",
-    time: "Yesterday", unread: false, actionUrl: null,
-  },
-  {
-    id: "n5", category: "achievement", icon: "🏆",
-    title: "7-Day Streak Achieved!",
-    desc: "You've practiced 7 days in a row. Keep it going!",
-    time: "3 hrs ago", unread: true, actionUrl: null,
-  },
-  {
-    id: "n6", category: "achievement", icon: "🎯",
-    title: "Top 10% this Week",
-    desc: "You ranked in the top 10% of all mock test takers.",
-    time: "2 days ago", unread: false, actionUrl: null,
-  },
-  {
-    id: "n7", category: "update", icon: "✨",
-    title: "New: Dark Mode Theme",
-    desc: "Experience better focus with our sleek dark UI.",
-    time: "2 days ago", unread: false, actionUrl: null,
-  },
-  {
-    id: "n8", category: "update", icon: "🚀",
-    title: "App Updated to v2.4",
-    desc: "Faster performance, new article reader, and bug fixes.",
-    time: "3 days ago", unread: false, actionUrl: null,
-  },
-];
-
-// ─── Config ───────────────────────────────────────────────────────────────────
-const TABS = [
-  { key: "All",         label: "All" },
-  { key: "Unread",      label: "Unread" },
-  { key: "mock",        label: "🧪 Mocks" },
-  { key: "study",       label: "📚 Study" },
-  { key: "achievement", label: "🏆 Awards" },
-];
-
-const CATEGORY_META = {
-  mock:        { label: "Mock Tests",      accent: "#2563EB", bg: "#EFF6FF", dot: "#2563EB" },
-  study:       { label: "Study",           accent: "#D97706", bg: "#FFFBEB", dot: "#D97706" },
-  achievement: { label: "Achievements",    accent: "#7C3AED", bg: "#F5F3FF", dot: "#7C3AED" },
-  update:      { label: "App Updates",     accent: "#059669", bg: "#ECFDF5", dot: "#059669" },
+// ─── DESIGN TOKENS — same as entire app ──────────────────────────────────────
+const C = {
+  primary:      '#1F3B1F',
+  primaryLight: '#E8F5EE',
+  primaryMid:   '#2EA86B',
+  primarySoft:  '#F0FAF5',
+  surface:      '#FFFFFF',
+  bg:           '#F6F8F7',
+  border:       '#E8EDEA',
+  borderLight:  '#F0F4F2',
+  text:         '#0D1F15',
+  sub:          '#527A62',
+  muted:        '#9DB5A5',
+  wrong:        '#DC2626',
+  wrongBg:      '#FEE2E2',
+  gold:         '#D97706',
+  goldSoft:     '#FEF3C7',
+  blue:         '#2563EB',
+  blueSoft:     '#EFF6FF',
+  purple:       '#7C3AED',
+  purpleSoft:   '#EDE9FE',
+  green:        '#059669',
+  greenSoft:    '#ECFDF5',
+  shadow:       '#0D1F15',
 };
 
-// ─── NotificationCard ─────────────────────────────────────────────────────────
+// ─── CATEGORY CONFIG ─────────────────────────────────────────────────────────
+const CAT = {
+  mock:        { label: 'Mock Tests',   accent: C.blue,   bg: C.blueSoft,   emoji: '🧪' },
+  study:       { label: 'Study',        accent: C.gold,   bg: C.goldSoft,   emoji: '📚' },
+  achievement: { label: 'Achievements', accent: C.purple, bg: C.purpleSoft, emoji: '🏆' },
+  update:      { label: 'Updates',      accent: C.green,  bg: C.greenSoft,  emoji: '✨' },
+};
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+const TABS = [
+  { key: 'all',         label: 'All'         },
+  { key: 'unread',      label: 'Unread'      },
+  { key: 'mock',        label: '🧪 Mocks'    },
+  { key: 'study',       label: '📚 Study'    },
+  { key: 'achievement', label: '🏆 Awards'   },
+];
+
+// ─── MOCK DATA ────────────────────────────────────────────────────────────────
+// TODO: Replace with → GET /api/notifications
+const MOCK_NOTIFICATIONS = [
+  {
+    id: 'n1', category: 'mock', icon: '📘',
+    title: 'VARC Sectional Mock 12 Live',
+    desc: 'New reading comprehension focus test is now available. Time: 40 mins.',
+    time: '10 min ago', unread: true, actionScreen: 'TestInterface',
+  },
+  {
+    id: 'n2', category: 'mock', icon: '📊',
+    title: 'Results: Full Mock #08',
+    desc: 'Your performance analysis is ready. View your rank and breakdown now.',
+    time: 'Yesterday', unread: false, actionScreen: 'ResultScreen',
+  },
+  {
+    id: 'n3', category: 'study', icon: '⏰',
+    title: 'Daily Vocab Practice',
+    desc: "Don't break your streak! Spend 10 mins on hard words.",
+    time: '2 hrs ago', unread: true, actionScreen: 'VocabLearning',
+  },
+  {
+    id: 'n4', category: 'study', icon: '📝',
+    title: 'Review Incorrect Answers',
+    desc: 'You have 15 pending questions from your last session.',
+    time: 'Yesterday', unread: false, actionScreen: null,
+  },
+  {
+    id: 'n5', category: 'achievement', icon: '🏆',
+    title: '7-Day Streak Achieved!',
+    desc: "You've practiced 7 days in a row. Keep the momentum going!",
+    time: '3 hrs ago', unread: true, actionScreen: null,
+  },
+  {
+    id: 'n6', category: 'achievement', icon: '🎯',
+    title: 'Top 10% This Week',
+    desc: 'You ranked in the top 10% of all mock test takers this week.',
+    time: '2 days ago', unread: false, actionScreen: null,
+  },
+  {
+    id: 'n7', category: 'update', icon: '✨',
+    title: 'New: Solution Explanations',
+    desc: 'Detailed expert solutions are now live for all VARC mocks.',
+    time: '2 days ago', unread: false, actionScreen: null,
+  },
+  {
+    id: 'n8', category: 'update', icon: '🚀',
+    title: 'App Updated to v1.0',
+    desc: 'Faster performance, new article reader, and several bug fixes.',
+    time: '3 days ago', unread: false, actionScreen: null,
+  },
+];
+
+// ─── SKELETON ────────────────────────────────────────────────────────────────
+const SkeletonPulse = ({ style }) => {
+  const anim = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1,   duration: 750, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0.4, duration: 750, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return <Animated.View style={[{ backgroundColor: C.border, opacity: anim }, style]} />;
+};
+
+const NotificationSkeleton = () => (
+  <View style={{ paddingHorizontal: sc(16), paddingTop: sc(14), gap: sc(16) }}>
+    {[0, 1].map(g => (
+      <View key={g}>
+        <SkeletonPulse style={{ width: sc(90), height: sc(22), borderRadius: sc(11), marginBottom: sc(10) }} />
+        <View style={{ backgroundColor: C.surface, borderRadius: sc(18), overflow: 'hidden', borderWidth: 1, borderColor: C.border }}>
+          {[0, 1, 2].map((i, _, arr) => (
+            <View key={i}>
+              <View style={{ flexDirection: 'row', padding: sc(14), gap: sc(12), alignItems: 'center' }}>
+                <SkeletonPulse style={{ width: sc(42), height: sc(42), borderRadius: sc(13) }} />
+                <View style={{ flex: 1, gap: sc(8) }}>
+                  <SkeletonPulse style={{ width: '70%', height: sc(12), borderRadius: sc(6) }} />
+                  <SkeletonPulse style={{ width: '90%', height: sc(10), borderRadius: sc(5) }} />
+                  <SkeletonPulse style={{ width: sc(60), height: sc(9),  borderRadius: sc(4) }} />
+                </View>
+              </View>
+              {i < arr.length - 1 && <View style={{ height: 1, backgroundColor: C.borderLight, marginLeft: sc(68) }} />}
+            </View>
+          ))}
+        </View>
+      </View>
+    ))}
+  </View>
+);
+
+// ─── NOTIFICATION CARD ────────────────────────────────────────────────────────
 const NotificationCard = React.memo(({ item, onPress, onDismiss, isLast }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const slideX     = useRef(new Animated.Value(0)).current;
+  const fadeOut    = useRef(new Animated.Value(1)).current;
 
-  const meta = CATEGORY_META[item.category] ?? { accent: "#64748B", bg: "#F8FAFC" };
+  const cat = CAT[item.category] ?? { accent: C.muted, bg: C.bg, emoji: '🔔' };
 
-  const handlePressIn  = () => Animated.spring(scaleAnim, { toValue: 0.975, useNativeDriver: true, speed: 50 }).start();
-  const handlePressOut = () => Animated.spring(scaleAnim, { toValue: 1,     useNativeDriver: true, speed: 50 }).start();
+  const onPressIn  = () =>
+    Animated.spring(pressScale, { toValue: 0.978, useNativeDriver: true, speed: 60 }).start();
+  const onPressOut = () =>
+    Animated.spring(pressScale, { toValue: 1, useNativeDriver: true, speed: 60 }).start();
 
   const handleDismiss = () => {
-    Animated.timing(slideAnim, { toValue: -width, duration: 260, useNativeDriver: true })
-      .start(() => onDismiss(item.id));
+    Animated.parallel([
+      Animated.timing(slideX,   { toValue: SW,  duration: 240, useNativeDriver: true }),
+      Animated.timing(fadeOut,  { toValue: 0,   duration: 220, useNativeDriver: true }),
+    ]).start(() => onDismiss(item.id));
   };
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateX: slideAnim }] }}>
+    <Animated.View style={{
+      transform: [{ scale: pressScale }, { translateX: slideX }],
+      opacity: fadeOut,
+    }}>
       <TouchableOpacity
-        style={[styles.card, item.unread && styles.cardUnread]}
+        style={[s.card, item.unread && s.cardUnread]}
         onPress={() => onPress(item)}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
         activeOpacity={1}
         accessibilityRole="button"
         accessibilityLabel={item.title}
       >
-        {/* Unread left strip */}
+        {/* Unread left accent bar */}
         {item.unread && (
-          <View style={[styles.unreadStrip, { backgroundColor: meta.accent }]} />
+          <View style={[s.unreadBar, { backgroundColor: cat.accent }]} />
         )}
 
-        {/* Icon */}
-        <View style={[styles.iconBox, { backgroundColor: meta.bg }]}>
-          <Text style={styles.iconEmoji}>{item.icon}</Text>
+        {/* Icon box */}
+        <View style={[s.iconBox, { backgroundColor: cat.bg }]}>
+          <Text style={s.iconEmoji}>{item.icon}</Text>
         </View>
 
         {/* Body */}
-        <View style={styles.cardBody}>
-          <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-            {item.unread && <View style={[styles.unreadDot, { backgroundColor: meta.accent }]} />}
+        <View style={s.cardBody}>
+          <View style={s.titleRow}>
+            <Text
+              style={[s.cardTitle, item.unread && s.cardTitleUnread]}
+              numberOfLines={1}
+            >
+              {item.title}
+            </Text>
+            {item.unread && (
+              <View style={[s.unreadDot, { backgroundColor: cat.accent }]} />
+            )}
           </View>
-          <Text style={styles.cardDesc} numberOfLines={2}>{item.desc}</Text>
-          <View style={styles.cardMeta}>
-            <Text style={styles.cardTime}>{item.time}</Text>
-            {item.actionUrl && (
-              <Text style={[styles.cardAction, { color: meta.accent }]}>View →</Text>
+
+          <Text style={s.cardDesc} numberOfLines={2}>{item.desc}</Text>
+
+          <View style={s.cardFooter}>
+            <Text style={s.cardTime}>{item.time}</Text>
+            {item.actionScreen && (
+              <View style={[s.actionPill, { backgroundColor: cat.bg }]}>
+                <Text style={[s.actionText, { color: cat.accent }]}>View →</Text>
+              </View>
             )}
           </View>
         </View>
 
-        {/* Dismiss */}
+        {/* Dismiss button */}
         <TouchableOpacity
           onPress={handleDismiss}
-          style={styles.dismissBtn}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={s.dismissBtn}
+          hitSlop={{ top: 14, bottom: 14, left: 14, right: 8 }}
+          accessibilityLabel="Dismiss notification"
         >
-          <Text style={styles.dismissIcon}>✕</Text>
+          <View style={s.dismissWrap}>
+            <Text style={s.dismissIcon}>✕</Text>
+          </View>
         </TouchableOpacity>
       </TouchableOpacity>
 
-      {/* Inline divider between cards — no big headers */}
-      {!isLast && <View style={styles.cardDivider} />}
+      {!isLast && (
+        <View style={s.cardDivider} />
+      )}
     </Animated.View>
   );
 });
 
-// ─── EmptyState ───────────────────────────────────────────────────────────────
-const EmptyState = () => (
-  <View style={styles.emptyWrap}>
-    <Text style={styles.emptyEmoji}>🔔</Text>
-    <Text style={styles.emptyTitle}>All caught up!</Text>
-    <Text style={styles.emptyDesc}>No notifications here right now.</Text>
+// ─── EMPTY STATE ─────────────────────────────────────────────────────────────
+const EmptyState = ({ tab }) => (
+  <View style={s.emptyWrap}>
+    <View style={s.emptyIconWrap}>
+      <Text style={s.emptyEmoji}>
+        {tab === 'unread' ? '✅' : '🔔'}
+      </Text>
+    </View>
+    <Text style={s.emptyTitle}>
+      {tab === 'unread' ? 'All caught up!' : 'Nothing here'}
+    </Text>
+    <Text style={s.emptyDesc}>
+      {tab === 'unread'
+        ? "You've read all your notifications."
+        : 'No notifications in this category yet.'}
+    </Text>
   </View>
 );
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 export default function NotificationScreen() {
   const navigation = useNavigation();
 
-  const [activeTab,     setActiveTab]     = useState("All");
-  const [notifications, setNotifications] = useState(NOTIFICATION_DATA);
+  // ── State ──
+  // TODO: Replace MOCK_NOTIFICATIONS with API fetch
+  // useEffect(() => { fetchNotifications(); }, []);
+  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [activeTab,     setActiveTab]     = useState('all');
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState(null);
+
+  // ── Animations ──
   const backScale = useRef(new Animated.Value(1)).current;
 
+  // ── TODO: Fetch from backend ───────────────────────────────────────────────
+  // const fetchNotifications = async () => {
+  //   setLoading(true); setError(null);
+  //   try {
+  //     const token = await SecureStore.getItemAsync('accessToken');
+  //     const res = await fetch('https://your-api.com/api/notifications', {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     if (!res.ok) throw new Error('Failed to load notifications');
+  //     const data = await res.json();
+  //     setNotifications(data.notifications);
+  //   } catch (e) { setError(e.message); }
+  //   finally     { setLoading(false); }
+  // };
+  // ──────────────────────────────────────────────────────────────────────────
+
   const unreadCount = useMemo(
-    () => notifications.filter((n) => n.unread).length,
+    () => notifications.filter(n => n.unread).length,
     [notifications]
   );
 
-  // Filter
+  // ── Filtered list ──
   const filtered = useMemo(() => {
-    if (activeTab === "All")    return notifications;
-    if (activeTab === "Unread") return notifications.filter((n) => n.unread);
-    return notifications.filter((n) => n.category === activeTab);
+    if (activeTab === 'all')    return notifications;
+    if (activeTab === 'unread') return notifications.filter(n => n.unread);
+    return notifications.filter(n => n.category === activeTab);
   }, [notifications, activeTab]);
 
-  // Group by category — only when showing "All" view
-  // For category-specific tabs, skip section headers entirely
-  const grouped = useMemo(() => {
-    if (activeTab !== "All") {
-      // Single flat group, no section label needed
+  // ── Grouped (only for 'all' tab) ──
+  const groups = useMemo(() => {
+    if (activeTab !== 'all') {
       return [{ category: null, items: filtered }];
     }
     const map = {};
-    filtered.forEach((n) => {
+    filtered.forEach(n => {
       if (!map[n.category]) map[n.category] = [];
       map[n.category].push(n);
     });
-    return ["mock", "study", "achievement", "update"]
-      .filter((cat) => map[cat])
-      .map((cat) => ({ category: cat, items: map[cat] }));
+    return ['mock', 'study', 'achievement', 'update']
+      .filter(cat => map[cat])
+      .map(cat => ({ category: cat, items: map[cat] }));
   }, [filtered, activeTab]);
 
-  // Handlers
+  // ── Handlers ──
   const handleBack = useCallback(() => {
     Animated.sequence([
-      Animated.timing(backScale, { toValue: 0.85, duration: 80, useNativeDriver: true }),
-      Animated.timing(backScale, { toValue: 1,    duration: 80, useNativeDriver: true }),
+      Animated.timing(backScale, { toValue: 0.85, duration: 70, useNativeDriver: true }),
+      Animated.timing(backScale, { toValue: 1,    duration: 70, useNativeDriver: true }),
     ]).start(() => navigation.goBack());
   }, [navigation]);
 
   const handleMarkAllRead = useCallback(() => {
-    // TODO: await fetch("https://your-api.com/notifications/read-all", { method: "POST" })
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    // TODO: POST /api/notifications/read-all
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
   }, []);
 
   const handlePress = useCallback((item) => {
-    // TODO: await fetch(`https://your-api.com/notifications/${item.id}/read`, { method: "PATCH" })
-    setNotifications((prev) => prev.map((n) => n.id === item.id ? { ...n, unread: false } : n));
-    if (item.actionUrl) navigation.navigate(item.actionUrl);
+    // TODO: PATCH /api/notifications/:id/read
+    setNotifications(prev =>
+      prev.map(n => n.id === item.id ? { ...n, unread: false } : n)
+    );
+    if (item.actionScreen) {
+      navigation.navigate(item.actionScreen);
+    }
   }, [navigation]);
 
   const handleDismiss = useCallback((id) => {
-    // TODO: await fetch(`https://your-api.com/notifications/${id}`, { method: "DELETE" })
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    // TODO: DELETE /api/notifications/:id
+    setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+  // ── Error state ──
+  if (error) {
+    return (
+      <SafeAreaView style={s.safe}>
+        <View style={s.errorWrap}>
+          <Text style={s.errorIcon}>⚠️</Text>
+          <Text style={s.errorTitle}>Couldn't load notifications</Text>
+          <Text style={s.errorSub}>{error}</Text>
+          <TouchableOpacity
+            style={s.retryBtn}
+            onPress={() => setError(null)} // TODO: onPress={fetchNotifications}
+          >
+            <Text style={s.retryText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-      {/* ── HEADER ── */}
-      <View style={styles.header}>
+  return (
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
+
+      {/* ── NAVBAR ── */}
+      <View style={s.navbar}>
         <Animated.View style={{ transform: [{ scale: backScale }] }}>
           <TouchableOpacity
             onPress={handleBack}
-            style={styles.iconBtn}
+            style={s.navIconBtn}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
-            <Image source={backicon} style={styles.backIcon} resizeMode="contain" />
+            <Text style={s.navBackIcon}>‹</Text>
           </TouchableOpacity>
         </Animated.View>
 
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Notifications</Text>
+        <View style={s.navCenter}>
+          <Text style={s.navTitle}>Notifications</Text>
           {unreadCount > 0 && (
-            <View style={styles.headerBadge}>
-              <Text style={styles.headerBadgeText}>{unreadCount}</Text>
+            <View style={s.navBadge}>
+              <Text style={s.navBadgeText}>{unreadCount}</Text>
             </View>
           )}
         </View>
 
-        <TouchableOpacity style={styles.iconBtn}>
-          <Text style={styles.settingsIcon}>⚙</Text>
+        {/* Settings shortcut */}
+        <TouchableOpacity
+          style={s.navIconBtn}
+          onPress={() => navigation.navigate('Notifications')} // NotificationSettings
+          accessibilityLabel="Notification settings"
+        >
+          <Text style={s.navSettingsIcon}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
       {/* ── TABS ── */}
-      <View style={styles.tabsRow}>
+      <View style={s.tabsWrap}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsContent}
+          contentContainerStyle={s.tabsContent}
         >
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.key;
+          {TABS.map(tab => {
+            const active = activeTab === tab.key;
+            const cat    = CAT[tab.key];
             return (
               <TouchableOpacity
                 key={tab.key}
                 onPress={() => setActiveTab(tab.key)}
-                style={[styles.tab, isActive && styles.tabActive]}
+                style={[
+                  s.tab,
+                  active && s.tabActive,
+                  active && cat && { backgroundColor: cat.accent },
+                ]}
                 activeOpacity={0.75}
               >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                <Text style={[s.tabText, active && s.tabTextActive]}>
                   {tab.label}
-                  {tab.key === "Unread" && unreadCount > 0 ? `  ${unreadCount}` : ""}
+                  {tab.key === 'unread' && unreadCount > 0
+                    ? `  ${unreadCount}` : ''}
                 </Text>
               </TouchableOpacity>
             );
@@ -288,315 +454,240 @@ export default function NotificationScreen() {
         </ScrollView>
       </View>
 
-      {/* ── LIST ── */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      >
-        {/* Mark all read bar */}
-        {unreadCount > 0 && (
-          <View style={styles.markAllRow}>
-            <Text style={styles.markAllCountText}>
-              {unreadCount} unread
-            </Text>
-            <TouchableOpacity onPress={handleMarkAllRead} activeOpacity={0.7}>
-              <Text style={styles.markAllAction}>Mark all read</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Empty */}
-        {filtered.length === 0 && <EmptyState />}
-
-        {/* Groups */}
-        {grouped.map(({ category, items }) => (
-          <View key={category ?? "flat"} style={styles.group}>
-
-            {/* Section pill — only in "All" tab, and very minimal */}
-            {category && (
-              <View style={styles.sectionPillRow}>
-                <View style={[
-                  styles.sectionPill,
-                  { backgroundColor: CATEGORY_META[category]?.bg ?? "#F1F5F9" }
-                ]}>
-                  <View style={[
-                    styles.sectionDot,
-                    { backgroundColor: CATEGORY_META[category]?.accent ?? "#64748B" }
-                  ]} />
-                  <Text style={[
-                    styles.sectionPillText,
-                    { color: CATEGORY_META[category]?.accent ?? "#64748B" }
-                  ]}>
-                    {CATEGORY_META[category]?.label ?? category}
-                  </Text>
-                </View>
+      {/* ── CONTENT ── */}
+      {loading ? <NotificationSkeleton /> : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={s.listContent}
+        >
+          {/* Mark all read bar */}
+          {unreadCount > 0 && (
+            <View style={s.markAllRow}>
+              <View style={s.markAllLeft}>
+                <View style={s.markAllDot} />
+                <Text style={s.markAllCount}>{unreadCount} unread</Text>
               </View>
-            )}
-
-            {/* Cards in a rounded container */}
-            <View style={styles.cardGroup}>
-              {items.map((item, idx) => (
-                <NotificationCard
-                  key={item.id}
-                  item={item}
-                  onPress={handlePress}
-                  onDismiss={handleDismiss}
-                  isLast={idx === items.length - 1}
-                />
-              ))}
+              <TouchableOpacity
+                onPress={handleMarkAllRead}
+                style={s.markAllBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={s.markAllBtnText}>Mark all read</Text>
+              </TouchableOpacity>
             </View>
+          )}
 
-          </View>
-        ))}
-      </ScrollView>
+          {/* Empty state */}
+          {filtered.length === 0 && <EmptyState tab={activeTab} />}
+
+          {/* Notification groups */}
+          {groups.map(({ category, items }) => {
+            const meta = category ? CAT[category] : null;
+            return (
+              <View key={category ?? 'flat'} style={s.group}>
+
+                {/* Category pill — only in 'all' tab */}
+                {meta && (
+                  <View style={s.catPillRow}>
+                    <View style={[s.catPill, { backgroundColor: meta.bg }]}>
+                      <Text style={s.catPillEmoji}>{meta.emoji}</Text>
+                      <Text style={[s.catPillText, { color: meta.accent }]}>
+                        {meta.label}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Cards container */}
+                <View style={s.cardGroup}>
+                  {items.map((item, idx) => (
+                    <NotificationCard
+                      key={item.id}
+                      item={item}
+                      onPress={handlePress}
+                      onDismiss={handleDismiss}
+                      isLast={idx === items.length - 1}
+                    />
+                  ))}
+                </View>
+
+              </View>
+            );
+          })}
+
+          <View style={{ height: sc(32) }} />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1F5F9" },
+// ─── STYLES ──────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bg },
 
-  // ── Header ──────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: scale(16),
-    paddingVertical: scale(12),
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-    paddingTop:35,
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4 },
-      android: { elevation: 2 },
-    }),
+  // ── Navbar ──────────────────────────────────────────────────────────────────
+  navbar: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: sc(16),
+    paddingTop:    Platform.OS === 'android' ? sc(36) : sc(12),
+    paddingBottom: sc(10),
+    backgroundColor: C.bg,
   },
-
-  iconBtn: {
-    width: scale(38),
-    height: scale(38),
-    borderRadius: scale(19),
-    backgroundColor: "#F1F5F9",
-    justifyContent: "center",
-    alignItems: "center",
+  navIconBtn: {
+    width: sc(38), height: sc(38), borderRadius: sc(12),
+    backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: C.border,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-
-  backIcon: { width: scale(19), height: scale(19), tintColor: "#0F172A" },
-
-  settingsIcon: { fontSize: scale(17), color: "#64748B" },
-
-  headerCenter: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: scale(7),
+  navBackIcon:     { fontSize: sc(24), color: C.text, lineHeight: sc(28), marginTop: -sc(1) },
+  navSettingsIcon: { fontSize: sc(16) },
+  navCenter: {
+    flex: 1, flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'center', gap: sc(7),
   },
-
-  headerTitle: { fontSize: scale(17), fontWeight: "800", color: "#0F172A" },
-
-  headerBadge: {
-    backgroundColor: "#EF4444",
-    borderRadius: scale(9),
-    minWidth: scale(18),
-    height: scale(18),
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: scale(4),
+  navTitle:     { fontSize: sc(17), fontWeight: '800', color: C.text, letterSpacing: -0.3 },
+  navBadge: {
+    backgroundColor: C.wrong, borderRadius: sc(9),
+    minWidth: sc(18), height: sc(18),
+    justifyContent: 'center', alignItems: 'center', paddingHorizontal: sc(4),
   },
+  navBadgeText: { fontSize: sc(10), fontWeight: '800', color: '#fff' },
 
-  headerBadgeText: { fontSize: scale(10), fontWeight: "800", color: "#FFFFFF" },
-
-  // ── Tabs ────────────────────────────────────────────────────────────────
-  tabsRow: {
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+  // ── Tabs ────────────────────────────────────────────────────────────────────
+  tabsWrap: {
+    backgroundColor: C.surface,
+    borderBottomWidth: 1, borderBottomColor: C.border,
   },
-
   tabsContent: {
-    paddingHorizontal: scale(16),
-    paddingVertical: scale(10),
-    gap: scale(8),
+    paddingHorizontal: sc(16), paddingVertical: sc(10), gap: sc(7),
   },
-
   tab: {
-    paddingHorizontal: scale(14),
-    paddingVertical: scale(6),
-    borderRadius: scale(20),
-    backgroundColor: "#F1F5F9",
+    paddingHorizontal: sc(14), paddingVertical: sc(7),
+    borderRadius: sc(20),
+    backgroundColor: C.bg,
+    borderWidth: 1, borderColor: C.border,
   },
+  tabActive: { backgroundColor: C.primary, borderColor: 'transparent' },
+  tabText:       { fontSize: sc(12), fontWeight: '600', color: C.muted },
+  tabTextActive: { color: '#fff', fontWeight: '700' },
 
-  tabActive: { backgroundColor: "#0F172A" },
+  // ── List ────────────────────────────────────────────────────────────────────
+  listContent: { paddingTop: sc(14), paddingBottom: sc(48) },
 
-  tabText: { fontSize: scale(13), fontWeight: "600", color: "#64748B" },
-
-  tabTextActive: { color: "#FFFFFF", fontWeight: "700" },
-
-  // ── List ────────────────────────────────────────────────────────────────
-  listContent: { paddingBottom: scale(100), paddingTop: scale(12) },
-
-  // ── Mark all ────────────────────────────────────────────────────────────
+  // ── Mark all read ────────────────────────────────────────────────────────────
   markAllRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: scale(20),
-    paddingBottom: scale(8),
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: sc(16), marginBottom: sc(12),
+    backgroundColor: C.surface,
+    borderRadius: sc(12), padding: sc(12),
+    borderWidth: 1, borderColor: C.border,
   },
-
-  markAllCountText: { fontSize: scale(12), color: "#94A3B8", fontWeight: "500" },
-
-  markAllAction: { fontSize: scale(13), color: "#2563EB", fontWeight: "700" },
-
-  // ── Group ───────────────────────────────────────────────────────────────
-  group: { marginBottom: scale(16), marginHorizontal: scale(16) },
-
-  // ── Section pill — small, inline, not a big header ────────────────────
-  sectionPillRow: {
-    flexDirection: "row",
-    marginBottom: scale(8),
+  markAllLeft: { flexDirection: 'row', alignItems: 'center', gap: sc(7) },
+  markAllDot:  { width: sc(7), height: sc(7), borderRadius: sc(4), backgroundColor: C.wrong },
+  markAllCount:{ fontSize: sc(12), fontWeight: '600', color: C.sub },
+  markAllBtn: {
+    backgroundColor: C.primaryLight, paddingHorizontal: sc(12), paddingVertical: sc(6),
+    borderRadius: sc(8),
   },
+  markAllBtnText: { fontSize: sc(12), fontWeight: '800', color: C.primary },
 
-  sectionPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: scale(5),
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(4),
-    borderRadius: scale(20),
-    alignSelf: "flex-start",
+  // ── Group ────────────────────────────────────────────────────────────────────
+  group: { marginBottom: sc(16), paddingHorizontal: sc(16) },
+
+  catPillRow: { marginBottom: sc(8) },
+  catPill: {
+    flexDirection: 'row', alignItems: 'center', gap: sc(5),
+    paddingHorizontal: sc(10), paddingVertical: sc(5),
+    borderRadius: sc(20), alignSelf: 'flex-start',
   },
+  catPillEmoji: { fontSize: sc(11) },
+  catPillText:  { fontSize: sc(11), fontWeight: '700', letterSpacing: 0.2 },
 
-  sectionDot: {
-    width: scale(6),
-    height: scale(6),
-    borderRadius: scale(3),
-  },
-
-  sectionPillText: {
-    fontSize: scale(11),
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-
-  // ── Card group container ────────────────────────────────────────────────
+  // ── Card group ────────────────────────────────────────────────────────────────
   cardGroup: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: scale(18),
-    overflow: "hidden",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
-      android: { elevation: 2 },
-    }),
+    backgroundColor: C.surface,
+    borderRadius: sc(18), overflow: 'hidden',
+    borderWidth: 1, borderColor: C.border,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
 
-  // ── Card ────────────────────────────────────────────────────────────────
+  // ── Card ────────────────────────────────────────────────────────────────────
   card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingVertical: scale(13),
-    paddingRight: scale(12),
-    paddingLeft: scale(14),
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: C.surface,
+    paddingVertical: sc(13), paddingRight: sc(12), paddingLeft: sc(14),
   },
+  cardUnread: { backgroundColor: C.primarySoft },
 
-  cardUnread: { backgroundColor: "#FAFBFF" },
-
-  unreadStrip: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: scale(3),
+  unreadBar: {
+    position: 'absolute', left: 0, top: 0, bottom: 0, width: sc(3),
   },
 
   iconBox: {
-    width: scale(42),
-    height: scale(42),
-    borderRadius: scale(13),
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: scale(12),
-    flexShrink: 0,
+    width: sc(42), height: sc(42), borderRadius: sc(13),
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: sc(12), flexShrink: 0,
   },
+  iconEmoji: { fontSize: sc(19) },
 
-  iconEmoji: { fontSize: scale(19) },
-
-  cardBody: { flex: 1 },
-
-  cardTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: scale(6),
-    marginBottom: scale(2),
-  },
-
+  cardBody:   { flex: 1 },
+  titleRow:   { flexDirection: 'row', alignItems: 'center', gap: sc(6), marginBottom: sc(3) },
   cardTitle: {
-    fontSize: scale(13),
-    fontWeight: "700",
-    color: "#0F172A",
-    flex: 1,
+    flex: 1, fontSize: sc(13), fontWeight: '600', color: C.sub,
   },
-
+  cardTitleUnread: { fontWeight: '800', color: C.text },
   unreadDot: {
-    width: scale(7),
-    height: scale(7),
-    borderRadius: scale(4),
-    flexShrink: 0,
+    width: sc(7), height: sc(7), borderRadius: sc(4), flexShrink: 0,
   },
-
   cardDesc: {
-    fontSize: scale(12),
-    color: "#64748B",
-    lineHeight: scale(17),
-    marginBottom: scale(5),
+    fontSize: sc(12), color: C.muted, lineHeight: sc(17), marginBottom: sc(6),
   },
-
-  cardMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  cardFooter: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-
-  cardTime: { fontSize: scale(11), color: "#94A3B8", fontWeight: "500" },
-
-  cardAction: { fontSize: scale(12), fontWeight: "700" },
-
-  dismissBtn: { paddingLeft: scale(8), paddingVertical: scale(4) },
-
-  dismissIcon: { fontSize: scale(12), color: "#CBD5E1" },
-
-  cardDivider: {
-    height: 1,
-    backgroundColor: "#F1F5F9",
-    marginLeft: scale(68), // aligns with card content, skips icon
+  cardTime: { fontSize: sc(11), color: C.muted, fontWeight: '500' },
+  actionPill: {
+    paddingHorizontal: sc(8), paddingVertical: sc(3), borderRadius: sc(7),
   },
+  actionText: { fontSize: sc(11), fontWeight: '800' },
 
-  // ── Empty ────────────────────────────────────────────────────────────────
-  emptyWrap: {
-    alignItems: "center",
-    paddingTop: scale(80),
-    paddingHorizontal: scale(40),
+  dismissBtn: { paddingLeft: sc(8), paddingVertical: sc(6) },
+  dismissWrap: {
+    width: sc(22), height: sc(22), borderRadius: sc(7),
+    backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: C.borderLight,
   },
+  dismissIcon: { fontSize: sc(9), color: C.muted, fontWeight: '700' },
 
-  emptyEmoji: { fontSize: scale(48), marginBottom: scale(14) },
+  cardDivider: { height: 1, backgroundColor: C.borderLight, marginLeft: sc(68) },
 
-  emptyTitle: {
-    fontSize: scale(17),
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: scale(6),
-    textAlign: "center",
+  // ── Empty ────────────────────────────────────────────────────────────────────
+  emptyWrap: { alignItems: 'center', paddingTop: sc(72), paddingHorizontal: sc(40), gap: sc(10) },
+  emptyIconWrap: {
+    width: sc(72), height: sc(72), borderRadius: sc(22),
+    backgroundColor: C.primaryLight, alignItems: 'center',
+    justifyContent: 'center', marginBottom: sc(6),
   },
+  emptyEmoji: { fontSize: sc(32) },
+  emptyTitle: { fontSize: sc(17), fontWeight: '800', color: C.text, textAlign: 'center' },
+  emptyDesc:  { fontSize: sc(13), color: C.muted,  lineHeight: sc(20), textAlign: 'center', fontWeight: '500' },
 
-  emptyDesc: {
-    fontSize: scale(14),
-    color: "#94A3B8",
-    textAlign: "center",
-    lineHeight: scale(21),
-    fontWeight: "500",
+  // ── Error ────────────────────────────────────────────────────────────────────
+  errorWrap: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    padding: sc(32), gap: sc(10),
   },
+  errorIcon:  { fontSize: sc(40) },
+  errorTitle: { fontSize: sc(18), fontWeight: '800', color: C.text },
+  errorSub:   { fontSize: sc(13), color: C.muted, textAlign: 'center' },
+  retryBtn: {
+    marginTop: sc(8), backgroundColor: C.primary,
+    paddingHorizontal: sc(24), paddingVertical: sc(12), borderRadius: sc(12),
+  },
+  retryText: { fontSize: sc(14), fontWeight: '800', color: '#fff' },
 });

@@ -21,18 +21,24 @@ const C = {
   primary:      '#1F3B1F',
   primaryLight: '#E8F5EE',
   primaryMid:   '#2EA86B',
+  primarySoft:  '#F0FAF5',
   surface:      '#FFFFFF',
-  bg:           '#F4F8F5',
-  border:       '#E0EDE6',
+  bg:           '#F6F8F7',
+  border:       '#E8EDEA',
+  borderLight:  '#F0F4F2',
   text:         '#0D1F15',
   sub:          '#527A62',
   muted:        '#9DB5A5',
-  correct:      '#22C55E',
-  wrong:        '#EF4444',
+  correct:      '#16A34A',
+  correctBg:    '#DCFCE7',
+  wrong:        '#DC2626',
+  wrongBg:      '#FEE2E2',
   marked:       '#7C3AED',
-  unattempted:  '#D1D5DB',
-  gold:         '#F59E0B',
-  goldSoft:     '#FEF3DC',
+  unattempted:  '#94A3B8',
+  unattemptedBg:'#F1F5F9',
+  gold:         '#D97706',
+  goldSoft:     '#FEF3C7',
+  shadow:       '#0D1F15',
 };
 
 const computeResult = (questionMeta, questions) => {
@@ -41,8 +47,6 @@ const computeResult = (questionMeta, questions) => {
   questions.forEach(q => {
     const meta = questionMeta?.[q.id];
 
-    // NOT_VISITED ya VISITED_NOT_ANSWERED → unattempted
-    // MARKED_REVIEW bina answer ke bhi → unattempted
     const hasNoAnswer =
       !meta ||
       meta.status === 'not_visited' ||
@@ -59,7 +63,7 @@ const computeResult = (questionMeta, questions) => {
       const ans         = (meta.titaAnswer ?? '').trim().toUpperCase();
       const correct_ans = (q.correctAnswer ?? '').trim().toUpperCase();
       if (ans === correct_ans) { correct++; tita_correct++; }
-      else unattempted++; // TITA wrong = no negative
+      else unattempted++;
     } else {
       if (meta.selected === q.correctOption) correct++;
       else if (meta.selected !== null)        wrong++;
@@ -75,7 +79,6 @@ const computeResult = (questionMeta, questions) => {
   return { correct, wrong, unattempted, score, maxScore, attempted, accuracy, total: questions.length };
 };
 
-// RC vs VA split
 const splitRCVA = (questionMeta, questions) => {
   const rc = questions.filter(q => q.passageId);
   const va = questions.filter(q => !q.passageId);
@@ -92,10 +95,10 @@ const formatTime = secs => {
 };
 
 const getPerformanceLabel = pct => {
-  if (pct >= 80) return { label: 'Excellent 🏆', color: C.primaryMid };
-  if (pct >= 60) return { label: 'Good 👍',       color: C.primary    };
-  if (pct >= 40) return { label: 'Average 📈',    color: C.gold       };
-  return            { label: 'Needs Work 💪',    color: C.wrong      };
+  if (pct >= 80) return { label: 'Excellent', emoji: '🏆', color: C.primaryMid, bg: C.primaryLight };
+  if (pct >= 60) return { label: 'Good',       emoji: '👍', color: C.primary,    bg: C.primaryLight };
+  if (pct >= 40) return { label: 'Average',    emoji: '📈', color: C.gold,       bg: C.goldSoft    };
+  return            { label: 'Needs Work',   emoji: '💪', color: C.wrong,      bg: C.wrongBg     };
 };
 
 const getPercentile = pct => {
@@ -110,7 +113,6 @@ const getPercentile = pct => {
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
 
-// Animated score counter
 const AnimatedScore = ({ score, maxScore }) => {
   const anim    = useRef(new Animated.Value(0)).current;
   const [disp, setDisp] = useState(0);
@@ -123,13 +125,12 @@ const AnimatedScore = ({ score, maxScore }) => {
 
   return (
     <View style={s.scoreBig}>
-      <Text style={s.scoreNum}>{disp}</Text>
+      <Text style={[s.scoreNum, { color: score >= 0 ? C.primary : C.wrong }]}>{disp}</Text>
       <Text style={s.scoreMax}>/{maxScore}</Text>
     </View>
   );
 };
 
-// Progress bar with animation
 const AnimBar = ({ pct, color, delay = 0, height = sc(8) }) => {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -143,8 +144,7 @@ const AnimBar = ({ pct, color, delay = 0, height = sc(8) }) => {
   );
 };
 
-// Stat bubble
-const StatBubble = ({ count, label, color, delay }) => {
+const StatBubble = ({ count, label, color, bg, delay }) => {
   const fade  = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(12)).current;
   useEffect(() => {
@@ -155,45 +155,60 @@ const StatBubble = ({ count, label, color, delay }) => {
   }, []);
   return (
     <Animated.View style={[s.statBubble, { opacity: fade, transform: [{ translateY: slide }] }]}>
-      <View style={[s.statDot, { backgroundColor: color }]} />
+      <View style={[s.statIconWrap, { backgroundColor: bg }]}>
+        <View style={[s.statDot, { backgroundColor: color }]} />
+      </View>
       <Text style={[s.statCount, { color }]}>{count}</Text>
       <Text style={s.statLabel}>{label}</Text>
     </Animated.View>
   );
 };
 
-// Section row (RC / VA)
 const SectionRow = ({ label, icon, res, delay }) => {
   const fade = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(fade, { toValue: 1, duration: 400, delay, useNativeDriver: true }).start();
   }, []);
-  const pct   = res.total > 0 ? Math.round((res.correct / res.total) * 100) : 0;
-  const score = res.correct * 3 - res.wrong * 1;
+  const pct      = res.total > 0 ? Math.round((res.correct / res.total) * 100) : 0;
+  const score    = res.correct * 3 - res.wrong * 1;
+  const barColor = pct >= 60 ? C.correct : pct >= 40 ? C.gold : C.wrong;
+  const scorePosColor = score >= 0 ? C.correct : C.wrong;
+  const scoreBg       = score >= 0 ? C.correctBg : C.wrongBg;
+
   return (
     <Animated.View style={[s.secRow, { opacity: fade }]}>
-      <View style={s.secLeft}>
-        <Text style={s.secIcon}>{icon}</Text>
-        <View>
-          <Text style={s.secLabel}>{label}</Text>
-          <Text style={s.secSub}>{res.total} Questions</Text>
+
+      {/* ── Top: icon + label + score pill ── */}
+      <View style={s.secTopRow}>
+        <View style={s.secTitleGroup}>
+          <View style={s.secIconWrap}>
+            <Text style={s.secIcon}>{icon}</Text>
+          </View>
+          <View>
+            <Text style={s.secLabel}>{label}</Text>
+            <Text style={s.secSub}>{res.total} Qs · {res.correct}C · {res.wrong}W · {res.unattempted}U</Text>
+          </View>
+        </View>
+        <View style={[s.secScorePill, { backgroundColor: scoreBg }]}>
+          <Text style={[s.secScore, { color: scorePosColor }]}>
+            {score >= 0 ? '+' : ''}{score} pts
+          </Text>
         </View>
       </View>
-      <View style={s.secMid}>
-        <AnimBar pct={pct} color={pct >= 60 ? C.correct : pct >= 40 ? C.gold : C.wrong} delay={delay} height={sc(6)} />
-        <Text style={s.secPct}>{pct}% accuracy</Text>
+
+      {/* ── Bottom: progress bar + accuracy ── */}
+      <View style={s.secBarSection}>
+        <AnimBar pct={pct} color={barColor} delay={delay} height={sc(6)} />
+        <View style={s.secBarFooter}>
+          <Text style={[s.secPct, { color: barColor }]}>{pct}% accuracy</Text>
+          <Text style={s.secAttempted}>{res.attempted}/{res.total} attempted</Text>
+        </View>
       </View>
-      <View style={s.secRight}>
-        <Text style={[s.secScore, { color: score >= 0 ? C.primary : C.wrong }]}>
-          {score >= 0 ? '+' : ''}{score}
-        </Text>
-        <Text style={s.secScoreSub}>pts</Text>
-      </View>
+
     </Animated.View>
   );
 };
 
-// Section header
 const SecHeader = ({ label }) => (
   <View style={s.secHeader}>
     <View style={s.secHeaderDot} />
@@ -207,16 +222,15 @@ export default function ResultScreen({ navigation, route }) {
   const questionMeta = route?.params?.questionMeta ?? {};
   const timeTaken    = route?.params?.timeTaken ?? 0;
 
-  const examConfig   = route?.params?.examConfig ?? getExamData(mockId);
+  const examConfig    = route?.params?.examConfig ?? getExamData(mockId);
   const activeSection = examConfig.sections.find(s => !s.locked);
-  const questions    = activeSection?.questions ?? [];
+  const questions     = activeSection?.questions ?? [];
 
-  // Compute results
   const result = computeResult(questionMeta, questions);
   const { rc, va } = splitRCVA(questionMeta, questions);
 
-  const scorePct  = result.maxScore > 0 ? Math.round((result.score / result.maxScore) * 100) : 0;
-  const perf      = getPerformanceLabel(scorePct);
+  const scorePct   = result.maxScore > 0 ? Math.round((result.score / result.maxScore) * 100) : 0;
+  const perf       = getPerformanceLabel(scorePct);
   const percentile = getPercentile(scorePct);
 
   // Animations
@@ -255,19 +269,45 @@ export default function ResultScreen({ navigation, route }) {
 
         {/* ── HERO CARD ── */}
         <Animated.View style={[s.hero, { opacity: heroFade, transform: [{ translateY: heroSlide }] }]}>
-          {/* Test name */}
-          <Text style={s.heroTestName}>{examConfig.testTitle}</Text>
-          <Text style={s.heroSection}>{activeSection?.label ?? 'VARC'} Section</Text>
 
-          {/* Performance badge */}
-          <View style={[s.perfBadge, { backgroundColor: perf.color + '22', borderColor: perf.color + '44' }]}>
-            <Text style={[s.perfText, { color: perf.color }]}>{perf.label}</Text>
+          {/* Top label row */}
+          <View style={s.heroTopRow}>
+            <View>
+              <Text style={s.heroTestName}>{examConfig.testTitle}</Text>
+              <Text style={s.heroSection}>{activeSection?.label ?? 'VARC'} Section</Text>
+            </View>
+            <View style={[s.perfBadge, { backgroundColor: perf.bg }]}>
+              <Text style={s.perfEmoji}>{perf.emoji}</Text>
+              <Text style={[s.perfText, { color: perf.color }]}>{perf.label}</Text>
+            </View>
           </View>
 
-          {/* Score */}
-          <AnimatedScore score={result.score} maxScore={result.maxScore} />
+          {/* Divider */}
+          <View style={s.heroDivider} />
 
-          {/* Accuracy + Percentile row */}
+          {/* Score + bar */}
+          <View style={s.heroScoreSection}>
+            <View style={s.heroScoreLeft}>
+              <Text style={s.heroScoreLabel}>YOUR SCORE</Text>
+              <AnimatedScore score={result.score} maxScore={result.maxScore} />
+            </View>
+            <View style={s.heroScoreRight}>
+              <View style={s.heroRingWrap}>
+                <Text style={s.heroRingPct}>{scorePct}%</Text>
+                <Text style={s.heroRingLabel}>of max</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Overall progress bar */}
+          <View style={s.heroBarWrap}>
+            <AnimBar pct={Math.max(scorePct, 0)} color={C.primaryMid} delay={400} height={sc(7)} />
+          </View>
+
+          {/* Divider */}
+          <View style={s.heroDivider} />
+
+          {/* Metrics row */}
           <View style={s.heroMetaRow}>
             <View style={s.heroMeta}>
               <Text style={s.heroMetaVal}>{result.accuracy}%</Text>
@@ -284,25 +324,16 @@ export default function ResultScreen({ navigation, route }) {
               <Text style={s.heroMetaLabel}>Time Taken</Text>
             </View>
           </View>
-
-          {/* Overall score bar */}
-          <View style={s.scoreBarSection}>
-            <View style={s.scoreBarLabelRow}>
-              <Text style={s.scoreBarLabel}>Overall Score</Text>
-              <Text style={s.scoreBarPct}>{scorePct}%</Text>
-            </View>
-            <AnimBar pct={Math.max(scorePct, 0)} color={C.primaryMid} delay={400} height={sc(10)} />
-          </View>
         </Animated.View>
 
         {/* ── QUESTION STATS ── */}
         <View style={s.section}>
           <SecHeader label="Question Breakdown" />
           <View style={s.statGrid}>
-            <StatBubble count={result.correct}     label="Correct"     color={C.correct}     delay={200} />
-            <StatBubble count={result.wrong}        label="Wrong"       color={C.wrong}       delay={300} />
-            <StatBubble count={result.unattempted}  label="Unattempted" color={C.unattempted} delay={400} />
-            <StatBubble count={result.attempted}    label="Attempted"   color={C.primary}     delay={500} />
+            <StatBubble count={result.correct}    label="Correct"     color={C.correct}     bg={C.correctBg}     delay={200} />
+            <StatBubble count={result.wrong}       label="Wrong"       color={C.wrong}       bg={C.wrongBg}       delay={300} />
+            <StatBubble count={result.unattempted} label="Unattempted" color={C.unattempted} bg={C.unattemptedBg} delay={400} />
+            <StatBubble count={result.attempted}   label="Attempted"   color={C.primary}     bg={C.primaryLight}  delay={500} />
           </View>
         </View>
 
@@ -312,22 +343,41 @@ export default function ResultScreen({ navigation, route }) {
           <View style={s.marksCard}>
             <View style={s.marksRow}>
               <View style={s.marksLeft}>
-                <Text style={s.marksIcon}>✅</Text>
-                <Text style={s.marksLabel}>Correct (+3 each)</Text>
+                <View style={[s.marksIconWrap, { backgroundColor: C.correctBg }]}>
+                  <Text style={s.marksIcon}>✅</Text>
+                </View>
+                <View>
+                  <Text style={s.marksLabel}>Correct</Text>
+                  <Text style={s.marksSubLabel}>+3 marks each</Text>
+                </View>
               </View>
-              <Text style={[s.marksVal, { color: C.correct }]}>+{result.correct * 3}</Text>
+              <View style={s.marksValWrap}>
+                <Text style={[s.marksVal, { color: C.correct }]}>+{result.correct * 3}</Text>
+              </View>
             </View>
             <View style={s.marksDivider} />
             <View style={s.marksRow}>
               <View style={s.marksLeft}>
-                <Text style={s.marksIcon}>❌</Text>
-                <Text style={s.marksLabel}>Wrong (−1 each)</Text>
+                <View style={[s.marksIconWrap, { backgroundColor: C.wrongBg }]}>
+                  <Text style={s.marksIcon}>❌</Text>
+                </View>
+                <View>
+                  <Text style={s.marksLabel}>Wrong</Text>
+                  <Text style={s.marksSubLabel}>−1 mark each</Text>
+                </View>
               </View>
-              <Text style={[s.marksVal, { color: C.wrong }]}>−{result.wrong}</Text>
+              <View style={s.marksValWrap}>
+                <Text style={[s.marksVal, { color: C.wrong }]}>−{result.wrong}</Text>
+              </View>
             </View>
             <View style={s.marksDivider} />
             <View style={[s.marksRow, s.marksTotal]}>
-              <Text style={s.marksTotalLabel}>Total Score</Text>
+              <View style={s.marksLeft}>
+                <View style={[s.marksIconWrap, { backgroundColor: C.primaryLight }]}>
+                  <Text style={s.marksIcon}>🏅</Text>
+                </View>
+                <Text style={s.marksTotalLabel}>Total Score</Text>
+              </View>
               <Text style={[s.marksTotalVal, { color: result.score >= 0 ? C.primary : C.wrong }]}>
                 {result.score >= 0 ? '+' : ''}{result.score} / {result.maxScore}
               </Text>
@@ -335,7 +385,7 @@ export default function ResultScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* ── SECTION BREAKDOWN — only if both RC & VA exist ── */}
+        {/* ── SECTION BREAKDOWN ── */}
         {rc.total > 0 && va.total > 0 && (
           <View style={s.section}>
             <SecHeader label="Section Breakdown" />
@@ -353,6 +403,7 @@ export default function ResultScreen({ navigation, route }) {
           <View style={s.insightCard}>
             <InsightRow
               icon={result.accuracy >= 70 ? '🎯' : '⚠️'}
+              color={result.accuracy >= 70 ? C.correctBg : C.goldSoft}
               text={
                 result.accuracy >= 70
                   ? `Great accuracy at ${result.accuracy}%! Focus on attempting more questions.`
@@ -361,6 +412,7 @@ export default function ResultScreen({ navigation, route }) {
             />
             <InsightRow
               icon={result.unattempted > questions.length * 0.4 ? '📌' : '✅'}
+              color={result.unattempted > questions.length * 0.4 ? C.goldSoft : C.correctBg}
               text={
                 result.unattempted > questions.length * 0.4
                   ? `${result.unattempted} questions unattempted. Time management needs improvement.`
@@ -369,6 +421,7 @@ export default function ResultScreen({ navigation, route }) {
             />
             <InsightRow
               icon="📊"
+              color={C.primaryLight}
               text={`Estimated percentile: ${percentile}. Review solutions to plug knowledge gaps.`}
             />
           </View>
@@ -389,7 +442,7 @@ export default function ResultScreen({ navigation, route }) {
         <TouchableOpacity
           style={s.ctaPrimary}
           onPress={() =>
-            navigation?.navigate('SolutionScreen', {
+            navigation?.navigate('solution', {
               mockId,
               questionMeta,
               examConfig,
@@ -404,9 +457,11 @@ export default function ResultScreen({ navigation, route }) {
   );
 }
 
-const InsightRow = ({ icon, text }) => (
+const InsightRow = ({ icon, text, color }) => (
   <View style={s.insightRow}>
-    <Text style={s.insightIcon}>{icon}</Text>
+    <View style={[s.insightIconWrap, { backgroundColor: color }]}>
+      <Text style={s.insightIcon}>{icon}</Text>
+    </View>
     <Text style={s.insightText}>{text}</Text>
   </View>
 );
@@ -415,7 +470,7 @@ const InsightRow = ({ icon, text }) => (
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
 
-  // Navbar — dark green
+  // Navbar
   navbar: {
     backgroundColor: C.primary,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -429,137 +484,215 @@ const s = StyleSheet.create({
 
   scroll: { paddingBottom: sc(20) },
 
-  // Hero
+  // ── HERO ──────────────────────────────────────────────────────────────────
   hero: {
-    backgroundColor: C.primary,
-    paddingHorizontal: sc(20),
-    paddingTop: sc(4),
-    paddingBottom: sc(28),
-    borderBottomLeftRadius: sc(28),
-    borderBottomRightRadius: sc(28),
+    backgroundColor: C.surface,
+    marginHorizontal: sc(16),
+    marginTop: sc(16),
+    borderRadius: sc(20),
+    borderWidth: 1,
+    borderColor: C.border,
+    overflow: 'hidden',
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+
+  // Hero top row
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    padding: sc(18),
+    paddingBottom: sc(14),
   },
   heroTestName: {
-    fontSize: sc(13), fontWeight: '700', color: '#A7C4AD',
-    letterSpacing: 0.5, marginBottom: sc(2),
+    fontSize: sc(13), fontWeight: '700', color: C.text,
+    letterSpacing: -0.1, marginBottom: sc(3),
   },
   heroSection: {
-    fontSize: sc(11), fontWeight: '600', color: '#6B9A75',
-    letterSpacing: 0.8, marginBottom: sc(16),
+    fontSize: sc(11), fontWeight: '600', color: C.muted, letterSpacing: 0.5,
   },
   perfBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: sc(12), paddingVertical: sc(5),
-    borderRadius: sc(10), borderWidth: 1,
-    marginBottom: sc(14),
+    flexDirection: 'row', alignItems: 'center', gap: sc(5),
+    paddingHorizontal: sc(10), paddingVertical: sc(6),
+    borderRadius: sc(10),
   },
-  perfText: { fontSize: sc(13), fontWeight: '800', letterSpacing: 0.2 },
+  perfEmoji: { fontSize: sc(13) },
+  perfText:  { fontSize: sc(12), fontWeight: '800', letterSpacing: -0.1 },
 
-  // Score
+  heroDivider: { height: 1, backgroundColor: C.borderLight, marginHorizontal: sc(18) },
+
+  // Hero score section
+  heroScoreSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: sc(18),
+    paddingTop: sc(16),
+    paddingBottom: sc(12),
+  },
+  heroScoreLeft:  { flex: 1 },
+  heroScoreLabel: {
+    fontSize: sc(10), fontWeight: '700', color: C.muted,
+    letterSpacing: 1.2, marginBottom: sc(4),
+  },
   scoreBig: {
     flexDirection: 'row', alignItems: 'flex-end',
-    marginBottom: sc(20),
   },
   scoreNum: {
-    fontSize: sc(72), fontWeight: '900', color: '#fff',
-    lineHeight: sc(80), letterSpacing: -3,
+    fontSize: sc(64), fontWeight: '900',
+    lineHeight: sc(70), letterSpacing: -3,
   },
   scoreMax: {
-    fontSize: sc(22), fontWeight: '700', color: '#6B9A75',
-    marginBottom: sc(10), marginLeft: sc(4),
+    fontSize: sc(20), fontWeight: '700', color: C.muted,
+    marginBottom: sc(8), marginLeft: sc(3),
   },
 
-  // Hero meta row
-  heroMetaRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: sc(14), paddingVertical: sc(12),
-    marginBottom: sc(20),
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+  heroScoreRight: { alignItems: 'center', justifyContent: 'center' },
+  heroRingWrap: {
+    width: sc(72), height: sc(72),
+    borderRadius: sc(36),
+    borderWidth: sc(5),
+    borderColor: C.primaryMid,
+    backgroundColor: C.primarySoft,
+    alignItems: 'center', justifyContent: 'center',
   },
-  heroMeta:        { flex: 1, alignItems: 'center' },
-  heroMetaVal:     { fontSize: sc(16), fontWeight: '800', color: '#fff', letterSpacing: -0.3 },
-  heroMetaLabel:   { fontSize: sc(10), fontWeight: '600', color: '#7BA882', marginTop: sc(2) },
-  heroMetaDivider: { width: 1, height: sc(30), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center' },
+  heroRingPct:   { fontSize: sc(17), fontWeight: '900', color: C.primary, letterSpacing: -0.5 },
+  heroRingLabel: { fontSize: sc(9), fontWeight: '600', color: C.sub },
 
-  // Score bar
-  scoreBarSection: { gap: sc(8) },
-  scoreBarLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  scoreBarLabel:    { fontSize: sc(11), fontWeight: '600', color: '#7BA882', letterSpacing: 0.5 },
-  scoreBarPct:      { fontSize: sc(12), fontWeight: '800', color: '#fff' },
-  barBg:   { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: sc(10), overflow: 'hidden' },
+  // Hero bar
+  heroBarWrap: {
+    paddingHorizontal: sc(18),
+    paddingBottom: sc(16),
+  },
+  barBg:   { backgroundColor: C.primaryLight, borderRadius: sc(10), overflow: 'hidden' },
   barFill: { borderRadius: sc(10) },
 
-  // Section
+  // Hero metrics row
+  heroMetaRow: {
+    flexDirection: 'row',
+    paddingVertical: sc(14),
+    paddingHorizontal: sc(8),
+  },
+  heroMeta:        { flex: 1, alignItems: 'center' },
+  heroMetaVal:     { fontSize: sc(15), fontWeight: '800', color: C.text, letterSpacing: -0.3 },
+  heroMetaLabel:   { fontSize: sc(10), fontWeight: '600', color: C.muted, marginTop: sc(2) },
+  heroMetaDivider: {
+    width: 1, height: sc(28),
+    backgroundColor: C.border,
+    alignSelf: 'center',
+  },
+
+  // ── SECTIONS ──────────────────────────────────────────────────────────────
   section:       { paddingHorizontal: sc(16), marginTop: sc(24) },
   secHeader:     { flexDirection: 'row', alignItems: 'center', marginBottom: sc(14) },
-  secHeaderDot:  { width: sc(4), height: sc(18), borderRadius: sc(2), backgroundColor: C.primary, marginRight: sc(10) },
-  secHeaderText: { fontSize: sc(17), fontWeight: '800', color: C.text, letterSpacing: -0.3 },
+  secHeaderDot:  {
+    width: sc(4), height: sc(16), borderRadius: sc(2),
+    backgroundColor: C.primaryMid, marginRight: sc(10),
+  },
+  secHeaderText: { fontSize: sc(16), fontWeight: '800', color: C.text, letterSpacing: -0.3 },
 
   // Stat grid
-  statGrid: {
-    flexDirection: 'row', gap: sc(10),
-  },
+  statGrid: { flexDirection: 'row', gap: sc(10) },
   statBubble: {
     flex: 1, backgroundColor: C.surface, borderRadius: sc(14),
     paddingVertical: sc(14), alignItems: 'center',
     borderWidth: 1, borderColor: C.border,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
-  statDot:   { width: sc(10), height: sc(10), borderRadius: sc(5), marginBottom: sc(6) },
+  statIconWrap: {
+    width: sc(28), height: sc(28), borderRadius: sc(8),
+    alignItems: 'center', justifyContent: 'center', marginBottom: sc(8),
+  },
+  statDot:   { width: sc(10), height: sc(10), borderRadius: sc(5) },
   statCount: { fontSize: sc(22), fontWeight: '900', letterSpacing: -0.5, marginBottom: sc(2) },
-  statLabel: { fontSize: sc(9), fontWeight: '700', color: C.muted, letterSpacing: 0.5, textAlign: 'center' },
+  statLabel: { fontSize: sc(9), fontWeight: '700', color: C.muted, letterSpacing: 0.3, textAlign: 'center' },
 
   // Marks card
   marksCard: {
     backgroundColor: C.surface, borderRadius: sc(16),
     borderWidth: 1, borderColor: C.border, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
   marksRow: {
     flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', padding: sc(16),
+    justifyContent: 'space-between', padding: sc(14), paddingHorizontal: sc(16),
   },
-  marksLeft:     { flexDirection: 'row', alignItems: 'center', gap: sc(10) },
-  marksIcon:     { fontSize: sc(16) },
-  marksLabel:    { fontSize: sc(13), fontWeight: '600', color: C.text },
-  marksVal:      { fontSize: sc(16), fontWeight: '800', letterSpacing: -0.3 },
-  marksDivider:  { height: 1, backgroundColor: C.border },
-  marksTotal:    { backgroundColor: C.primaryLight },
+  marksLeft:    { flexDirection: 'row', alignItems: 'center', gap: sc(12) },
+  marksIconWrap:{
+    width: sc(36), height: sc(36), borderRadius: sc(10),
+    alignItems: 'center', justifyContent: 'center',
+  },
+  marksIcon:    { fontSize: sc(16) },
+  marksLabel:   { fontSize: sc(13), fontWeight: '700', color: C.text },
+  marksSubLabel:{ fontSize: sc(10), fontWeight: '500', color: C.muted, marginTop: sc(1) },
+  marksValWrap: {
+    backgroundColor: C.bg, paddingHorizontal: sc(12), paddingVertical: sc(6),
+    borderRadius: sc(10), borderWidth: 1, borderColor: C.border,
+  },
+  marksVal:     { fontSize: sc(16), fontWeight: '800', letterSpacing: -0.3 },
+  marksDivider: { height: 1, backgroundColor: C.borderLight },
+  marksTotal:   { backgroundColor: C.primarySoft },
   marksTotalLabel: { fontSize: sc(14), fontWeight: '800', color: C.primary },
   marksTotalVal:   { fontSize: sc(18), fontWeight: '900', letterSpacing: -0.5 },
 
-  // Section breakdown card
+  // Section breakdown
   secCard: {
     backgroundColor: C.surface, borderRadius: sc(16),
     borderWidth: 1, borderColor: C.border, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
-  secRow:     { flexDirection: 'row', alignItems: 'center', padding: sc(14), gap: sc(10) },
-  secLeft:    { flexDirection: 'row', alignItems: 'center', gap: sc(10), width: sc(130) },
-  secIcon:    { fontSize: sc(18) },
-  secLabel:   { fontSize: sc(12), fontWeight: '700', color: C.text },
-  secSub:     { fontSize: sc(10), color: C.muted, fontWeight: '500' },
-  secMid:     { flex: 1, gap: sc(4) },
-  secPct:     { fontSize: sc(10), color: C.sub, fontWeight: '600' },
-  secRight:   { alignItems: 'flex-end', minWidth: sc(36) },
-  secScore:   { fontSize: sc(16), fontWeight: '800', letterSpacing: -0.3 },
-  secScoreSub:{ fontSize: sc(10), color: C.muted, fontWeight: '600' },
-  secDivider: { height: 1, backgroundColor: C.border, marginHorizontal: sc(14) },
+  secRow: { padding: sc(16), gap: sc(12) },
+  secTopRow: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', gap: sc(10),
+  },
+  secTitleGroup: {
+    flexDirection: 'row', alignItems: 'center',
+    gap: sc(10), flex: 1,
+  },
+  secIconWrap: {
+    width: sc(38), height: sc(38), borderRadius: sc(10),
+    backgroundColor: C.primaryLight, alignItems: 'center',
+    justifyContent: 'center', flexShrink: 0,
+  },
+  secIcon:  { fontSize: sc(18) },
+  secLabel: { fontSize: sc(13), fontWeight: '800', color: C.text, letterSpacing: -0.2 },
+  secSub:   { fontSize: sc(10), color: C.muted, fontWeight: '500', marginTop: sc(2) },
+  secScorePill: {
+    paddingHorizontal: sc(10), paddingVertical: sc(5),
+    borderRadius: sc(10), flexShrink: 0,
+  },
+  secScore: { fontSize: sc(14), fontWeight: '800', letterSpacing: -0.3 },
+  secBarSection: { gap: sc(6) },
+  secBarFooter: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
+  secPct:      { fontSize: sc(11), fontWeight: '700' },
+  secAttempted:{ fontSize: sc(11), fontWeight: '600', color: C.muted },
+  secDivider:  { height: 1, backgroundColor: C.borderLight },
 
   // Insight
   insightCard: {
     backgroundColor: C.surface, borderRadius: sc(16),
-    borderWidth: 1, borderColor: C.border, padding: sc(16),
-    gap: sc(12),
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    borderWidth: 1, borderColor: C.border, padding: sc(14),
+    gap: sc(10),
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
-  insightRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: sc(10) },
-  insightIcon: { fontSize: sc(16), marginTop: sc(1) },
-  insightText: { flex: 1, fontSize: sc(13), color: C.sub, fontWeight: '500', lineHeight: sc(19) },
+  insightRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: sc(12) },
+  insightIconWrap:{
+    width: sc(34), height: sc(34), borderRadius: sc(10),
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  insightIcon: { fontSize: sc(16) },
+  insightText: { flex: 1, fontSize: sc(13), color: C.sub, fontWeight: '500', lineHeight: sc(19), paddingTop: sc(7) },
 
   // CTA
   ctaWrap: {
@@ -568,6 +701,8 @@ const s = StyleSheet.create({
     paddingHorizontal: sc(16), paddingTop: sc(12),
     paddingBottom: Platform.OS === 'ios' ? sc(28) : sc(16),
     borderTopWidth: 1, borderTopColor: C.border, gap: sc(10),
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06, shadowRadius: 12,
   },
   ctaSecondary: {
     flex: 1, paddingVertical: sc(14), borderRadius: sc(14),
@@ -579,7 +714,7 @@ const s = StyleSheet.create({
     flex: 1.8, paddingVertical: sc(14), borderRadius: sc(14),
     backgroundColor: C.primary, alignItems: 'center',
     shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
+    shadowOpacity: 0.30, shadowRadius: 12, elevation: 6,
   },
   ctaPrimaryText: { fontSize: sc(14), fontWeight: '800', color: '#fff', letterSpacing: -0.2 },
 });

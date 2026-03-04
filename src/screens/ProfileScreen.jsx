@@ -1,128 +1,205 @@
 /**
  * ProfileScreen.jsx
- * Production-ready | Backend-ready | Consistent with app design system
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Production-ready | Backend-ready | Consistent with Verbify design system
  *
- * TODO markers show exact backend wiring points.
- * Data shape mirrors a typical user profile API response.
+ * BACKEND INTEGRATION GUIDE:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 1. FETCH PROFILE     → GET  /api/user/profile       (Bearer token)
+ * 2. LOGOUT            → POST /api/auth/logout        (clears refresh token)
+ * 3. AVATAR UPLOAD     → PUT  /api/user/avatar        (multipart/form-data)
+ * 4. SUBSCRIPTION INFO → GET  /api/user/subscription  (Bearer token)
+ *
+ * Response shape (GET /api/user/profile):
+ * {
+ *   id, name, email, phone, avatarUrl,
+ *   targetExam, targetYear,
+ *   stats: { streak, testsGiven, avgScore, rank },
+ *   subscription: { plan, expiresAt, isActive }
+ * }
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, {
+  useState, useRef, useCallback,
+  useEffect, useMemo,
+} from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  Platform,
-  StatusBar,
-  Animated,
-  Image,
-  Alert,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import backicon from "../assets/icon/backbutton.png";
+  View, Text, StyleSheet, SafeAreaView,
+  ScrollView, TouchableOpacity, Dimensions,
+  Platform, StatusBar, Animated, Image, Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const { width } = Dimensions.get("window");
-const scale = (s) => (width / 375) * s;
+const { width: SW } = Dimensions.get('window');
+const sc = n => (SW / 390) * n;
 
-// ─── Mock User Data ───────────────────────────────────────────────────────────
-// TODO: Replace with API call:
-// const res = await fetch("https://your-api.com/user/profile", {
-//   headers: { Authorization: `Bearer ${token}` },
-// });
-// Shape: { id, name, email, phone, avatar, targetExam, targetYear,
-//          stats: { streak, testsGiven, avgScore, rank },
-//          subscription: { plan, expiresAt } }
+// ─── DESIGN TOKENS — same as ResultScreen / SolutionScreen ───────────────────
+const C = {
+  primary:      '#1F3B1F',
+  primaryLight: '#E8F5EE',
+  primaryMid:   '#2EA86B',
+  primarySoft:  '#F0FAF5',
+  surface:      '#FFFFFF',
+  bg:           '#F6F8F7',
+  border:       '#E8EDEA',
+  borderLight:  '#F0F4F2',
+  text:         '#0D1F15',
+  sub:          '#527A62',
+  muted:        '#9DB5A5',
+  correct:      '#16A34A',
+  correctBg:    '#DCFCE7',
+  wrong:        '#DC2626',
+  wrongBg:      '#FEE2E2',
+  gold:         '#D97706',
+  goldSoft:     '#FEF3C7',
+  blue:         '#2563EB',
+  blueSoft:     '#EFF6FF',
+  purple:       '#7C3AED',
+  purpleSoft:   '#EDE9FE',
+  shadow:       '#0D1F15',
+};
 
-const USER = {
-  id: "u_001",
-  name: "Aryan Sharma",
-  email: "aryan.sharma@gmail.com",
-  phone: "+91 98765 43210",
-  avatar: null,           // TODO: replace with image URI from API
-  initials: "AS",
-  targetExam: "CAT 2025",
-  targetYear: "2025",
-  college: "IIM Ahmedabad",
-  subscription: {
-    plan: "Pro",
-    expiresAt: "31 Dec 2025",
-  },
+// ─── MOCK DATA ────────────────────────────────────────────────────────────────
+// TODO: Replace with API call → GET /api/user/profile
+// See backend integration guide at top of file.
+const MOCK_USER = {
+  id:          'u_001',
+  name:        'Aryan Sharma',
+  email:       'aryan.sharma@gmail.com',
+  phone:       '+91 98765 43210',
+  avatarUrl:   null,             // TODO: string URI from API
+  targetExam:  'CAT 2025',
+  targetYear:  '2025',
   stats: {
     streak:     14,
     testsGiven: 38,
     avgScore:   82,
     rank:       247,
   },
+  subscription: {
+    plan:      'Pro',
+    expiresAt: '31 Dec 2025',
+    isActive:  true,
+  },
 };
 
-// ─── Settings sections ────────────────────────────────────────────────────────
-const SETTINGS_SECTIONS = [
+// ─── SETTINGS CONFIG ──────────────────────────────────────────────────────────
+const SETTINGS = [
   {
-    title: "Account",
+    title: 'Account',
     items: [
-      { id: "edit",     icon: "✏️", label: "Edit Profile",         arrow: true,  action: "EditProfile" },
-      { id: "target",   icon: "🎯", label: "Target & Preferences", arrow: true,  action: "TargetPrefs" },
-      { id: "notif",    icon: "🔔", label: "Notifications",        arrow: true,  action: "Notifications" },
+      { id: 'edit',     icon: '✏️', label: 'Edit Profile',         screen: 'EditProfile'  },
+      { id: 'target',   icon: '🎯', label: 'Target & Preferences', screen: 'TargetPrefs'  },
+      { id: 'notif',    icon: '🔔', label: 'Notifications',        screen: 'Notifications' },
     ],
   },
   {
-    title: "Study",
+    title: 'Study',
     items: [
-      { id: "history",  icon: "📊", label: "Test History",         arrow: true,  action: "TestHistory" },
-      { id: "bookmark", icon: "🔖", label: "Bookmarks",            arrow: true,  action: "Bookmarks" },
-      { id: "download", icon: "⬇️", label: "Downloads",            arrow: true,  action: "Downloads" },
+      { id: 'history',  icon: '📊', label: 'Test History',  screen: 'TestHistory' },
+      { id: 'bookmark', icon: '🔖', label: 'Bookmarks',     screen: 'Bookmarks'   },
+      { id: 'download', icon: '⬇️', label: 'Downloads',     screen: 'Downloads'   },
     ],
   },
   {
-    title: "Support",
+    title: 'Support',
     items: [
-      { id: "help",     icon: "💬", label: "Help & Support",       arrow: true,  action: "Help" },
-      { id: "about",    icon: "ℹ️",  label: "About Verbify",        arrow: true,  action: "About" },
-      { id: "rate",     icon: "⭐", label: "Rate the App",          arrow: false, action: "rate" },
+      { id: 'help',     icon: '💬', label: 'Help & Support',  screen: 'Help'  },
+      { id: 'about',    icon: 'ℹ️',  label: 'About Verbify',   screen: 'About' },
+      { id: 'rate',     icon: '⭐',  label: 'Rate the App',    screen: null    },
     ],
   },
 ];
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = React.memo(({ value, label, accent, delay }) => {
-  const fadeAnim  = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(scale(16))).current;
+// ─── AVATAR COLORS ─────────────────────────────────────────────────────────────
+const AVATAR_COLORS = [C.primary, C.blue, C.purple, C.gold, '#BE185D'];
+const getAvatarColor = name =>
+  AVATAR_COLORS[name?.charCodeAt(0) % AVATAR_COLORS.length] ?? C.primary;
+
+const getInitials = name =>
+  name?.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() ?? '?';
+
+// ─── SKELETON PULSE ──────────────────────────────────────────────────────────
+const SkeletonPulse = ({ style }) => {
+  const anim = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1,   duration: 800, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return <Animated.View style={[style, { opacity: anim, backgroundColor: C.border }]} />;
+};
+
+// ─── LOADING SKELETON ─────────────────────────────────────────────────────────
+const ProfileSkeleton = () => (
+  <View style={{ paddingHorizontal: sc(16), paddingTop: sc(8) }}>
+    {/* Hero */}
+    <View style={{ alignItems: 'center', paddingVertical: sc(24), gap: sc(10) }}>
+      <SkeletonPulse style={{ width: sc(90), height: sc(90), borderRadius: sc(45) }} />
+      <SkeletonPulse style={{ width: sc(140), height: sc(16), borderRadius: sc(8) }} />
+      <SkeletonPulse style={{ width: sc(180), height: sc(12), borderRadius: sc(6) }} />
+      <SkeletonPulse style={{ width: sc(90),  height: sc(28), borderRadius: sc(14) }} />
+    </View>
+    {/* Stats */}
+    <View style={{ flexDirection: 'row', gap: sc(8), marginBottom: sc(16) }}>
+      {[0,1,2,3].map(i => (
+        <SkeletonPulse key={i} style={{ flex: 1, height: sc(72), borderRadius: sc(14) }} />
+      ))}
+    </View>
+    {/* Sub card */}
+    <SkeletonPulse style={{ height: sc(72), borderRadius: sc(18), marginBottom: sc(24) }} />
+    {/* Sections */}
+    {[0,1].map(i => (
+      <View key={i} style={{ marginBottom: sc(20) }}>
+        <SkeletonPulse style={{ width: sc(60), height: sc(11), borderRadius: sc(6), marginBottom: sc(8) }} />
+        <SkeletonPulse style={{ height: sc(140), borderRadius: sc(18) }} />
+      </View>
+    ))}
+  </View>
+);
+
+// ─── STAT CARD ────────────────────────────────────────────────────────────────
+const StatCard = React.memo(({ value, label, accent, bg, delay }) => {
+  const fadeY = useRef(new Animated.Value(sc(12))).current;
+  const fade  = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim,  { toValue: 1, duration: 400, delay, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 400, delay, useNativeDriver: true }),
+      Animated.timing(fade,  { toValue: 1, duration: 380, delay, useNativeDriver: true }),
+      Animated.timing(fadeY, { toValue: 0, duration: 380, delay, useNativeDriver: true }),
     ]).start();
   }, []);
 
   return (
-    <Animated.View style={[styles.statCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <Animated.View style={[
+      s.statCard,
+      { opacity: fade, transform: [{ translateY: fadeY }] },
+    ]}>
+      <View style={[s.statIconRow, { backgroundColor: bg }]}>
+        <Text style={[s.statValue, { color: accent }]}>{value}</Text>
+      </View>
+      <Text style={s.statLabel}>{label}</Text>
     </Animated.View>
   );
 });
 
-// ─── Setting Row ──────────────────────────────────────────────────────────────
-const SettingRow = React.memo(({ item, isFirst, isLast, onPress }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.98, useNativeDriver: true, speed: 50 }).start();
-  const onPressOut = () => Animated.spring(scaleAnim, { toValue: 1,    useNativeDriver: true, speed: 50 }).start();
+// ─── SETTING ROW ─────────────────────────────────────────────────────────────
+const SettingRow = React.memo(({ item, isLast, onPress }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const onPressIn  = () =>
+    Animated.spring(scale, { toValue: 0.975, useNativeDriver: true, speed: 60 }).start();
+  const onPressOut = () =>
+    Animated.spring(scale, { toValue: 1,     useNativeDriver: true, speed: 60 }).start();
 
   return (
     <>
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Animated.View style={{ transform: [{ scale }] }}>
         <TouchableOpacity
-          style={[
-            styles.settingRow,
-            isFirst && styles.settingRowFirst,
-            isLast  && styles.settingRowLast,
-          ]}
+          style={s.settingRow}
           onPress={() => onPress(item)}
           onPressIn={onPressIn}
           onPressOut={onPressOut}
@@ -130,514 +207,538 @@ const SettingRow = React.memo(({ item, isFirst, isLast, onPress }) => {
           accessibilityRole="button"
           accessibilityLabel={item.label}
         >
-          <View style={styles.settingIconWrap}>
-            <Text style={styles.settingIcon}>{item.icon}</Text>
+          <View style={s.settingIconWrap}>
+            <Text style={s.settingIcon}>{item.icon}</Text>
           </View>
-          <Text style={styles.settingLabel}>{item.label}</Text>
-          {item.arrow && <Text style={styles.settingArrow}>›</Text>}
+          <Text style={s.settingLabel}>{item.label}</Text>
+          {item.screen && (
+            <View style={s.settingArrowWrap}>
+              <Text style={s.settingArrow}>›</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </Animated.View>
-      {!isLast && <View style={styles.settingDivider} />}
+      {!isLast && <View style={s.settingDivider} />}
     </>
   );
 });
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─── MAIN SCREEN ──────────────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const navigation = useNavigation();
-  const scrollY     = useRef(new Animated.Value(0)).current;
-  const backScale   = useRef(new Animated.Value(1)).current;
-  const headerFade  = useRef(new Animated.Value(0)).current;
 
-  // Sticky header title fades in on scroll
-  const stickyTitleOpacity = scrollY.interpolate({
-    inputRange: [scale(80), scale(130)],
+  // ── State ──
+  // TODO: Replace MOCK_USER with API fetch result
+  // useEffect(() => { fetchProfile(); }, []);
+  const [user,    setUser]    = useState(MOCK_USER);
+  const [loading, setLoading] = useState(false);   // set true while API fetches
+  const [error,   setError]   = useState(null);
+
+  // ── Animations ──
+  const scrollY    = useRef(new Animated.Value(0)).current;
+  const backScale  = useRef(new Animated.Value(1)).current;
+
+  // Sticky header title
+  const stickyOpacity = scrollY.interpolate({
+    inputRange:  [sc(90), sc(140)],
     outputRange: [0, 1],
-    extrapolate: "clamp",
+    extrapolate: 'clamp',
   });
+
+  // Hero parallax
+  const heroTranslate = scrollY.interpolate({
+    inputRange:  [0, sc(200)],
+    outputRange: [0, -sc(30)],
+    extrapolate: 'clamp',
+  });
+
+  // ── TODO: Fetch profile from backend ──────────────────────────────────────
+  // const fetchProfile = async () => {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     const token = await SecureStore.getItemAsync('accessToken');
+  //     const res = await fetch('https://your-api.com/api/user/profile', {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     if (!res.ok) throw new Error('Failed to load profile');
+  //     const data = await res.json();
+  //     setUser(data);
+  //   } catch (e) {
+  //     setError(e.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  // ──────────────────────────────────────────────────────────────────────────
 
   const handleBack = useCallback(() => {
     Animated.sequence([
-      Animated.timing(backScale, { toValue: 0.85, duration: 80, useNativeDriver: true }),
-      Animated.timing(backScale, { toValue: 1,    duration: 80, useNativeDriver: true }),
+      Animated.timing(backScale, { toValue: 0.85, duration: 70, useNativeDriver: true }),
+      Animated.timing(backScale, { toValue: 1,    duration: 70, useNativeDriver: true }),
     ]).start(() => navigation.goBack());
   }, [navigation]);
 
   const handleSetting = useCallback((item) => {
-    if (item.action === "rate") {
-      Alert.alert("Rate Verbify", "Opening app store…");
+    if (!item.screen) {
+      // e.g. Rate the App
+      Alert.alert('Rate Verbify', 'Opening app store…');
       return;
     }
-    // TODO: navigation.navigate(item.action)
-    Alert.alert(item.label, "Coming soon!");
-  }, [navigation]);
+    // TODO: navigation.navigate(item.screen)
+    Alert.alert(item.label, 'Coming soon!');
+  }, []);
 
   const handleLogout = useCallback(() => {
     Alert.alert(
-      "Log Out",
-      "Are you sure you want to log out?",
+      'Log Out',
+      'Are you sure you want to log out?',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Log Out",
-          style: "destructive",
-          onPress: () => {
-            // TODO: clear token, navigate to Auth
-            // await AsyncStorage.clear();
-            // navigation.reset({ index: 0, routes: [{ name: "Auth" }] });
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            // TODO: Backend logout + secure store clear
+            // ─────────────────────────────────────────
+            // try {
+            //   const token = await SecureStore.getItemAsync('accessToken');
+            //   await fetch('https://your-api.com/api/auth/logout', {
+            //     method: 'POST',
+            //     headers: { Authorization: `Bearer ${token}` },
+            //   });
+            // } catch (_) {}
+            // await SecureStore.deleteItemAsync('accessToken');
+            // await SecureStore.deleteItemAsync('refreshToken');
+            // navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+            // ─────────────────────────────────────────
+            Alert.alert('Logged out (TODO: wire backend)');
           },
         },
       ]
     );
   }, []);
 
-  const avatarBg = ["#1F3B1F", "#2563EB", "#7C3AED", "#D97706"][
-    USER.name.charCodeAt(0) % 4
-  ];
+  const handleRenew = useCallback(() => {
+    // TODO: navigation.navigate('Subscription')
+    Alert.alert('Subscription', 'Opening subscription screen…');
+  }, []);
+
+  const avatarColor = useMemo(() => getAvatarColor(user?.name), [user?.name]);
+  const initials    = useMemo(() => getInitials(user?.name),    [user?.name]);
+
+  // ── Error State ──
+  if (error) {
+    return (
+      <SafeAreaView style={s.safe}>
+        <View style={s.errorWrap}>
+          <Text style={s.errorIcon}>⚠️</Text>
+          <Text style={s.errorTitle}>Couldn't load profile</Text>
+          <Text style={s.errorSub}>{error}</Text>
+          <TouchableOpacity
+            style={s.retryBtn}
+            // onPress={fetchProfile}
+            onPress={() => setError(null)}
+          >
+            <Text style={s.retryText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAF6" />
+    <SafeAreaView style={s.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
-      {/* ── STICKY HEADER ── */}
-      <View style={styles.header}>
+      {/* ── STICKY NAVBAR ── */}
+      <View style={s.navbar}>
         <Animated.View style={{ transform: [{ scale: backScale }] }}>
           <TouchableOpacity
             onPress={handleBack}
-            style={styles.iconBtn}
+            style={s.navIconBtn}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Image source={backicon} style={styles.backIcon} resizeMode="contain" />
+            <Text style={s.navBackIcon}>‹</Text>
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Title fades in when user scrolls past hero */}
-        <Animated.Text style={[styles.headerTitle, { opacity: stickyTitleOpacity }]}>
-          {USER.name}
+        {/* Fades in as user scrolls past hero */}
+        <Animated.Text
+          style={[s.navTitle, { opacity: stickyOpacity }]}
+          numberOfLines={1}
+        >
+          {user?.name ?? 'Profile'}
         </Animated.Text>
 
-        {/* Edit shortcut */}
         <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => handleSetting({ label: "Edit Profile", action: "EditProfile" })}
+          style={s.navIconBtn}
+          onPress={() => handleSetting({ label: 'Edit Profile', screen: 'EditProfile' })}
           accessibilityRole="button"
           accessibilityLabel="Edit profile"
         >
-          <Text style={styles.editIcon}>✏️</Text>
+          <Text style={s.navEditIcon}>✏️</Text>
         </TouchableOpacity>
       </View>
 
-      {/* ── SCROLLABLE CONTENT ── */}
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-      >
-
-        {/* ── HERO SECTION ── */}
-        <View style={styles.hero}>
-          {/* Avatar */}
-          <View style={[styles.avatarRing, { borderColor: avatarBg + "30" }]}>
-            <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-              {USER.avatar
-                ? <Image source={{ uri: USER.avatar }} style={styles.avatarImg} />
-                : <Text style={styles.avatarInitials}>{USER.initials}</Text>
-              }
-            </View>
-            {/* Pro badge */}
-            <View style={styles.proBadge}>
-              <Text style={styles.proBadgeText}>⭐ {USER.subscription.plan}</Text>
-            </View>
-          </View>
-
-          {/* Name & info */}
-          <Text style={styles.heroName}>{USER.name}</Text>
-          <Text style={styles.heroEmail}>{USER.email}</Text>
-
-          {/* Target chip */}
-          <View style={styles.targetChip}>
-            <Text style={styles.targetChipText}>🎯 {USER.targetExam}</Text>
-          </View>
-        </View>
-
-        {/* ── STATS ROW ── */}
-        <View style={styles.statsRow}>
-          <StatCard value={`${USER.stats.streak}🔥`} label="Streak"    accent="#D97706" delay={0}   />
-          <StatCard value={USER.stats.testsGiven}     label="Tests"     accent="#2563EB" delay={80}  />
-          <StatCard value={`${USER.stats.avgScore}%`} label="Avg Score" accent="#059669" delay={160} />
-          <StatCard value={`#${USER.stats.rank}`}     label="Rank"      accent="#7C3AED" delay={240} />
-        </View>
-
-        {/* ── SUBSCRIPTION CARD ── */}
-        <View style={styles.subCard}>
-          <View style={styles.subLeft}>
-            <Text style={styles.subIcon}>💎</Text>
-            <View>
-              <Text style={styles.subPlan}>{USER.subscription.plan} Plan</Text>
-              <Text style={styles.subExpiry}>Valid till {USER.subscription.expiresAt}</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.subBtn} activeOpacity={0.85}>
-            <Text style={styles.subBtnText}>Renew</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── SETTINGS SECTIONS ── */}
-        {SETTINGS_SECTIONS.map((section) => (
-          <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionCard}>
-              {section.items.map((item, idx) => (
-                <SettingRow
-                  key={item.id}
-                  item={item}
-                  isFirst={idx === 0}
-                  isLast={idx === section.items.length - 1}
-                  onPress={handleSetting}
-                />
-              ))}
-            </View>
-          </View>
-        ))}
-
-        {/* ── LOGOUT ── */}
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={handleLogout}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Log out"
+      {loading ? <ProfileSkeleton /> : (
+        <Animated.ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={s.scroll}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
         >
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+          {/* ── HERO ── */}
+          <Animated.View style={[s.hero, { transform: [{ translateY: heroTranslate }] }]}>
 
-        {/* ── VERSION ── */}
-        <Text style={styles.version}>Verbify v2.4.0</Text>
+            {/* Avatar */}
+            <View style={s.avatarContainer}>
+              <View style={[s.avatarRing, { borderColor: avatarColor + '30' }]}>
+                <View style={[s.avatar, { backgroundColor: avatarColor }]}>
+                  {user?.avatarUrl
+                    ? <Image source={{ uri: user.avatarUrl }} style={s.avatarImg} />
+                    : <Text style={s.avatarInitials}>{initials}</Text>
+                  }
+                </View>
+              </View>
+              {/* Camera edit button */}
+              <TouchableOpacity
+                style={s.avatarEditBtn}
+                onPress={() => handleSetting({ label: 'Edit Profile', screen: 'EditProfile' })}
+                accessibilityLabel="Change profile photo"
+              >
+                <Text style={s.avatarEditIcon}>📷</Text>
+              </TouchableOpacity>
+            </View>
 
-      </Animated.ScrollView>
+            {/* Subscription badge */}
+            {user?.subscription?.isActive && (
+              <View style={s.planBadge}>
+                <Text style={s.planBadgeText}>⭐ {user.subscription.plan}</Text>
+              </View>
+            )}
+
+            <Text style={s.heroName}>{user?.name}</Text>
+            <Text style={s.heroEmail}>{user?.email}</Text>
+
+            <View style={s.heroMetaRow}>
+              {user?.phone && (
+                <View style={s.heroMetaChip}>
+                  <Text style={s.heroMetaChipText}>📱 {user.phone}</Text>
+                </View>
+              )}
+              {user?.targetExam && (
+                <View style={[s.heroMetaChip, s.heroMetaChipGreen]}>
+                  <Text style={[s.heroMetaChipText, { color: C.primary }]}>
+                    🎯 {user.targetExam}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Animated.View>
+
+          {/* ── STATS ── */}
+          <View style={s.statsRow}>
+            <StatCard
+              value={`${user?.stats?.streak ?? 0}🔥`}
+              label="Streak"
+              accent={C.gold}
+              bg={C.goldSoft}
+              delay={0}
+            />
+            <StatCard
+              value={user?.stats?.testsGiven ?? 0}
+              label="Tests"
+              accent={C.blue}
+              bg={C.blueSoft}
+              delay={70}
+            />
+            <StatCard
+              value={`${user?.stats?.avgScore ?? 0}%`}
+              label="Avg Score"
+              accent={C.correct}
+              bg={C.correctBg}
+              delay={140}
+            />
+            <StatCard
+              value={`#${user?.stats?.rank ?? '—'}`}
+              label="Rank"
+              accent={C.purple}
+              bg={C.purpleSoft}
+              delay={210}
+            />
+          </View>
+
+          {/* ── SUBSCRIPTION CARD ── */}
+          <View style={s.subCard}>
+            <View style={s.subLeft}>
+              <View style={s.subIconWrap}>
+                <Text style={s.subIcon}>💎</Text>
+              </View>
+              <View>
+                <Text style={s.subPlan}>
+                  {user?.subscription?.plan ?? 'Free'} Plan
+                </Text>
+                <Text style={s.subExpiry}>
+                  {user?.subscription?.isActive
+                    ? `Valid till ${user.subscription.expiresAt}`
+                    : 'No active plan'}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={s.subBtn}
+              onPress={handleRenew}
+              activeOpacity={0.85}
+            >
+              <Text style={s.subBtnText}>
+                {user?.subscription?.isActive ? 'Renew' : 'Upgrade'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── SETTINGS ── */}
+          {SETTINGS.map(section => (
+            <View key={section.title} style={s.section}>
+              <Text style={s.sectionTitle}>{section.title}</Text>
+              <View style={s.sectionCard}>
+                {section.items.map((item, idx) => (
+                  <SettingRow
+                    key={item.id}
+                    item={item}
+                    isLast={idx === section.items.length - 1}
+                    onPress={handleSetting}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
+
+          {/* ── LOGOUT ── */}
+          <TouchableOpacity
+            style={s.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Log out"
+          >
+            <Text style={s.logoutIcon}>🚪</Text>
+            <Text style={s.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+
+          {/* ── VERSION ── */}
+          <Text style={s.version}>Verbify v1.0.0</Text>
+
+        </Animated.ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#F1F5F0",
+// ─── STYLES ──────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.bg },
+
+  // ── Navbar ──────────────────────────────────────────────────────────────────
+  navbar: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: sc(16),
+    paddingTop:    Platform.OS === 'android' ? sc(36) : sc(12),
+    paddingBottom: sc(10),
+    backgroundColor: C.bg,
+  },
+  navIconBtn: {
+    width: sc(38), height: sc(38), borderRadius: sc(12),
+    backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: C.border,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  },
+  navBackIcon: { fontSize: sc(24), color: C.text, lineHeight: sc(28), marginTop: -sc(1) },
+  navEditIcon: { fontSize: sc(16) },
+  navTitle: {
+    flex: 1, textAlign: 'center',
+    fontSize: sc(16), fontWeight: '800',
+    color: C.text, letterSpacing: -0.3,
   },
 
-  // ── Header ────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: scale(16),
-    paddingTop: Platform.OS === "android" ? scale(8) : scale(4),
-    paddingBottom: scale(10),
-    backgroundColor: "#F1F5F0",
-    paddingTop:35
-  },
+  // ── Scroll ──────────────────────────────────────────────────────────────────
+  scroll: { paddingBottom: sc(48) },
 
-
-
-  
-  
-  iconBtn: {
-    width: scale(38),
-    height: scale(38),
-    borderRadius: scale(19),
-    backgroundColor: "#E4EDE4",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  backIcon: {
-    width: scale(19),
-    height: scale(19),
-    tintColor: "#1F3B1F",
-  },
-
-  editIcon: { fontSize: scale(16) },
-
-  headerTitle: {
-    fontSize: scale(16),
-    fontWeight: "800",
-    color: "#1F3B1F",
-    flex: 1,
-    textAlign: "center",
-  },
-
-  // ── Scroll ────────────────────────────────────────────────────────────────
-  scrollContent: {
-    paddingBottom: scale(48),
-  },
-
-  // ── Hero ──────────────────────────────────────────────────────────────────
+  // ── Hero ────────────────────────────────────────────────────────────────────
   hero: {
-    alignItems: "center",
-    paddingTop: scale(8),
-    paddingBottom: scale(24),
-    paddingHorizontal: scale(20),
+    alignItems: 'center',
+    paddingTop: sc(12), paddingBottom: sc(24),
+    paddingHorizontal: sc(20),
   },
 
+  avatarContainer: { position: 'relative', marginBottom: sc(12) },
   avatarRing: {
-    width: scale(104),
-    height: scale(104),
-    borderRadius: scale(52),
-    borderWidth: scale(4),
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: scale(14),
+    width: sc(100), height: sc(100), borderRadius: sc(50),
+    borderWidth: sc(3.5),
+    alignItems: 'center', justifyContent: 'center',
   },
-
   avatar: {
-    width: scale(90),
-    height: scale(90),
-    borderRadius: scale(45),
-    justifyContent: "center",
-    alignItems: "center",
+    width: sc(88), height: sc(88), borderRadius: sc(44),
+    alignItems: 'center', justifyContent: 'center',
   },
-
-  avatarImg: {
-    width: scale(90),
-    height: scale(90),
-    borderRadius: scale(45),
-  },
-
+  avatarImg: { width: sc(88), height: sc(88), borderRadius: sc(44) },
   avatarInitials: {
-    fontSize: scale(30),
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: scale(1),
+    fontSize: sc(28), fontWeight: '900',
+    color: '#fff', letterSpacing: sc(0.5),
   },
+  avatarEditBtn: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: sc(28), height: sc(28), borderRadius: sc(9),
+    backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 4, elevation: 3,
+  },
+  avatarEditIcon: { fontSize: sc(12) },
 
-  proBadge: {
-    position: "absolute",
-    bottom: 0,
-    alignSelf: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: scale(8),
-    paddingVertical: scale(3),
-    borderRadius: scale(20),
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-      android: { elevation: 3 },
-    }),
+  planBadge: {
+    backgroundColor: C.primary,
+    paddingHorizontal: sc(12), paddingVertical: sc(4),
+    borderRadius: sc(20), marginBottom: sc(10),
   },
-
-  proBadgeText: {
-    fontSize: scale(10),
-    fontWeight: "800",
-    color: "#1F3B1F",
-  },
+  planBadgeText: { fontSize: sc(11), fontWeight: '800', color: '#fff' },
 
   heroName: {
-    fontSize: scale(22),
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: scale(4),
-    letterSpacing: -0.3,
+    fontSize: sc(22), fontWeight: '900', color: C.text,
+    letterSpacing: -0.4, marginBottom: sc(4),
   },
-
   heroEmail: {
-    fontSize: scale(13),
-    color: "#6B7280",
-    fontWeight: "500",
-    marginBottom: scale(12),
+    fontSize: sc(13), color: C.muted, fontWeight: '500',
+    marginBottom: sc(14),
   },
-
-  targetChip: {
-    backgroundColor: "#E4EDE4",
-    paddingHorizontal: scale(14),
-    paddingVertical: scale(6),
-    borderRadius: scale(20),
+  heroMetaRow:      { flexDirection: 'row', gap: sc(8), flexWrap: 'wrap', justifyContent: 'center' },
+  heroMetaChip: {
+    backgroundColor: C.surface, paddingHorizontal: sc(12), paddingVertical: sc(6),
+    borderRadius: sc(20), borderWidth: 1, borderColor: C.border,
   },
+  heroMetaChipGreen: { backgroundColor: C.primaryLight, borderColor: C.primaryMid + '40' },
+  heroMetaChipText:  { fontSize: sc(12), fontWeight: '600', color: C.sub },
 
-  targetChipText: {
-    fontSize: scale(12),
-    fontWeight: "700",
-    color: "#1F3B1F",
-  },
-
-  // ── Stats ──────────────────────────────────────────────────────────────────
+  // ── Stats ────────────────────────────────────────────────────────────────────
   statsRow: {
-    flexDirection: "row",
-    marginHorizontal: scale(16),
-    gap: scale(8),
-    marginBottom: scale(16),
+    flexDirection: 'row',
+    marginHorizontal: sc(16), gap: sc(8),
+    marginBottom: sc(14),
   },
-
   statCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: scale(16),
-    paddingVertical: scale(14),
-    paddingHorizontal: scale(4),
-    alignItems: "center",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6 },
-      android: { elevation: 2 },
-    }),
+    flex: 1, backgroundColor: C.surface,
+    borderRadius: sc(14), paddingVertical: sc(12),
+    alignItems: 'center', gap: sc(6),
+    borderWidth: 1, borderColor: C.border,
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
-
-  statValue: {
-    fontSize: scale(17),
-    fontWeight: "800",
-    marginBottom: scale(3),
+  statIconRow: {
+    paddingHorizontal: sc(6), paddingVertical: sc(3),
+    borderRadius: sc(8),
   },
+  statValue: { fontSize: sc(15), fontWeight: '900', letterSpacing: -0.3 },
+  statLabel: { fontSize: sc(10), color: C.muted, fontWeight: '600' },
 
-  statLabel: {
-    fontSize: scale(10),
-    color: "#9CA3AF",
-    fontWeight: "600",
-  },
-
-  // ── Subscription card ──────────────────────────────────────────────────────
+  // ── Subscription ─────────────────────────────────────────────────────────────
   subCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1F3B1F",
-    marginHorizontal: scale(16),
-    marginBottom: scale(24),
-    padding: scale(16),
-    borderRadius: scale(18),
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: C.primary,
+    marginHorizontal: sc(16), marginBottom: sc(22),
+    padding: sc(16), borderRadius: sc(18),
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 12, elevation: 6,
   },
-
-  subLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: scale(12),
+  subLeft: { flexDirection: 'row', alignItems: 'center', gap: sc(12) },
+  subIconWrap: {
+    width: sc(42), height: sc(42), borderRadius: sc(12),
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
   },
-
-  subIcon: { fontSize: scale(24) },
-
-  subPlan: {
-    fontSize: scale(15),
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-
-  subExpiry: {
-    fontSize: scale(11),
-    color: "#A7C4A7",
-    marginTop: scale(2),
-    fontWeight: "500",
-  },
-
+  subIcon:   { fontSize: sc(22) },
+  subPlan:   { fontSize: sc(15), fontWeight: '800', color: '#fff' },
+  subExpiry: { fontSize: sc(11), color: '#A7C4A7', marginTop: sc(2), fontWeight: '500' },
   subBtn: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: scale(16),
-    paddingVertical: scale(8),
-    borderRadius: scale(12),
+    backgroundColor: '#fff',
+    paddingHorizontal: sc(16), paddingVertical: sc(9),
+    borderRadius: sc(12),
   },
+  subBtnText: { fontSize: sc(13), fontWeight: '800', color: C.primary },
 
-  subBtnText: {
-    fontSize: scale(13),
-    fontWeight: "800",
-    color: "#1F3B1F",
-  },
-
-  // ── Settings sections ──────────────────────────────────────────────────────
-  section: {
-    marginHorizontal: scale(16),
-    marginBottom: scale(20),
-  },
-
+  // ── Settings ─────────────────────────────────────────────────────────────────
+  section: { marginHorizontal: sc(16), marginBottom: sc(18) },
   sectionTitle: {
-    fontSize: scale(12),
-    fontWeight: "700",
-    color: "#9CA3AF",
-    letterSpacing: 0.6,
-    marginBottom: scale(8),
-    marginLeft: scale(4),
-    textTransform: "uppercase",
+    fontSize: sc(11), fontWeight: '700', color: C.muted,
+    letterSpacing: 0.8, marginBottom: sc(8),
+    marginLeft: sc(4), textTransform: 'uppercase',
   },
-
   sectionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: scale(18),
-    overflow: "hidden",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6 },
-      android: { elevation: 2 },
-    }),
+    backgroundColor: C.surface, borderRadius: sc(18),
+    borderWidth: 1, borderColor: C.border, overflow: 'hidden',
+    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
 
   settingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: scale(14),
-    paddingHorizontal: scale(16),
-    backgroundColor: "#FFFFFF",
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: sc(13), paddingHorizontal: sc(14),
+    backgroundColor: C.surface,
   },
-
-  settingRowFirst: { borderTopLeftRadius: scale(18), borderTopRightRadius: scale(18) },
-  settingRowLast:  { borderBottomLeftRadius: scale(18), borderBottomRightRadius: scale(18) },
-
   settingIconWrap: {
-    width: scale(34),
-    height: scale(34),
-    borderRadius: scale(10),
-    backgroundColor: "#F1F5F0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: scale(12),
+    width: sc(36), height: sc(36), borderRadius: sc(10),
+    backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center',
+    marginRight: sc(12),
+    borderWidth: 1, borderColor: C.borderLight,
   },
-
-  settingIcon: { fontSize: scale(16) },
-
-  settingLabel: {
-    flex: 1,
-    fontSize: scale(14),
-    fontWeight: "600",
-    color: "#111827",
+  settingIcon:  { fontSize: sc(16) },
+  settingLabel: { flex: 1, fontSize: sc(14), fontWeight: '600', color: C.text },
+  settingArrowWrap: {
+    width: sc(24), height: sc(24), borderRadius: sc(7),
+    backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: C.borderLight,
   },
-
-  settingArrow: {
-    fontSize: scale(20),
-    color: "#D1D5DB",
-    fontWeight: "300",
-    lineHeight: scale(22),
-  },
-
+  settingArrow: { fontSize: sc(15), color: C.muted, fontWeight: '600' },
   settingDivider: {
-    height: 1,
-    backgroundColor: "#F1F5F9",
-    marginLeft: scale(62),
+    height: 1, backgroundColor: C.borderLight, marginLeft: sc(62),
   },
 
-  // ── Logout ────────────────────────────────────────────────────────────────
+  // ── Logout ───────────────────────────────────────────────────────────────────
   logoutBtn: {
-    marginHorizontal: scale(16),
-    marginTop: scale(4),
-    marginBottom: scale(16),
-    backgroundColor: "#FEF2F2",
-    borderRadius: scale(16),
-    paddingVertical: scale(15),
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: sc(8),
+    marginHorizontal: sc(16), marginTop: sc(4), marginBottom: sc(16),
+    backgroundColor: C.wrongBg, borderRadius: sc(16),
+    paddingVertical: sc(15), borderWidth: 1, borderColor: '#FEE2E2',
   },
+  logoutIcon: { fontSize: sc(16) },
+  logoutText: { fontSize: sc(15), fontWeight: '800', color: C.wrong },
 
-  logoutText: {
-    fontSize: scale(15),
-    fontWeight: "800",
-    color: "#DC2626",
-  },
-
-  // ── Version ───────────────────────────────────────────────────────────────
+  // ── Version ──────────────────────────────────────────────────────────────────
   version: {
-    textAlign: "center",
-    fontSize: scale(12),
-    color: "#CBD5E1",
-    fontWeight: "500",
-    marginBottom: scale(8),
+    textAlign: 'center', fontSize: sc(11),
+    color: C.muted, fontWeight: '500', marginBottom: sc(8),
   },
+
+  // ── Error State ──────────────────────────────────────────────────────────────
+  errorWrap: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    padding: sc(32), gap: sc(10),
+  },
+  errorIcon:  { fontSize: sc(40) },
+  errorTitle: { fontSize: sc(18), fontWeight: '800', color: C.text },
+  errorSub:   { fontSize: sc(13), color: C.muted, textAlign: 'center' },
+  retryBtn: {
+    marginTop: sc(8), backgroundColor: C.primary,
+    paddingHorizontal: sc(24), paddingVertical: sc(12),
+    borderRadius: sc(12),
+  },
+  retryText: { fontSize: sc(14), fontWeight: '800', color: '#fff' },
 });
