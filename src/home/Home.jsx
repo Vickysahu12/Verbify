@@ -91,6 +91,8 @@ const PRACTICE_ITEMS = [
   },
 
   
+
+
   {
     id: 'rc',
     icon: '📄', title: 'RC Practice',
@@ -98,6 +100,8 @@ const PRACTICE_ITEMS = [
     screen: 'PracticeMain',
     accent: C.correct, bg: C.correctBg,
   },
+
+  
   {
     id: 'va',
     icon: '🧩', title: 'VA Practice',
