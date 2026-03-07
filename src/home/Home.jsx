@@ -104,6 +104,7 @@ const PRACTICE_ITEMS = [
   
   {
     id: 'va',
+    
     icon: '🧩', title: 'VA Practice',
     getSubtitle: s => s.va.types,
     screen: 'PracticeMain',
