@@ -3,8 +3,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import TestScreen from "../screens/MockPortal/TestsScreen"
 
-import MockDetailsScreen from "../screens/MockPortal/MockDetailsScreen";
 import TestInterfaceScreen from "../screens/MockPortal/TestInterfaceScreen";
+import MockDetailsScreen from "../screens/MockPortal/MockDetailsScreen";
 import ResultScreen from "../screens/MockPortal/ResultScreen";
 import AnalyticsScreen from "../screens/MockPortal/AnalyticsScreen";
 import SolutionScreen from "../screens/MockPortal/SolutionScreen";

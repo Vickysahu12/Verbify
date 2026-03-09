@@ -65,8 +65,8 @@ const C = {
 // See backend integration guide at top of file.
 const MOCK_USER = {
   id:          'u_001',
-  name:        'Aryan Sharma',
-  email:       'aryan.sharma@gmail.com',
+  name:        'Vicky Sahu',
+  email:       'Vicky.sahu@gmsil.com',
   phone:       '+91 98765 43210',
   avatarUrl:   null,             // TODO: string URI from API
   targetExam:  'CAT 2025',

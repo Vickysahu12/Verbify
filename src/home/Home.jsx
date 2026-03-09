@@ -325,9 +325,9 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate(screen);
   }, [navigation]);
 
-  const handleTest = useCallback((screen) => {
-    navigation.navigate(screen);
-  }, [navigation]);
+const handleTest = useCallback((screen) => {
+    navigation.navigate('Tests', { screen: screen }); // pehle Tests tab, phir screen
+}, [navigation]);  
 
   const greeting = getGreeting();
 
@@ -450,7 +450,7 @@ const HomeScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={s.focusBtn}
                 activeOpacity={0.85}
-                onPress={() => navigation.navigate('TestInterface')}
+                onPress={() => navigation.navigate('PracticeMain')}
                 accessibilityRole="button"
                 accessibilityLabel="Continue learning"
               >
@@ -480,7 +480,8 @@ const HomeScreen = ({ navigation }) => {
             <SectionHeader
               title="Tests"
               action="All tests"
-              onAction={() => navigation.navigate('TestMain')}
+              onAction={() => navigation.navigate('Tests', { screen: 'TestMain' })}
+
             />
             <View style={s.testGrid}>
               {TEST_ITEMS.map(item => (
@@ -540,7 +541,7 @@ const HomeScreen = ({ navigation }) => {
             <TouchableOpacity
               style={s.mockBanner}
               activeOpacity={0.88}
-              onPress={() => navigation.navigate('TestMain')}
+              onPress={() => navigation.navigate('Tests', { screen: 'TestMain' })}
               accessibilityRole="button"
               accessibilityLabel="Take a full mock test"
             >
