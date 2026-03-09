@@ -104,7 +104,6 @@ const PRACTICE_ITEMS = [
   
   {
     id: 'va',
-    
     icon: '🧩', title: 'VA Practice',
     getSubtitle: s => s.va.types,
     screen: 'PracticeMain',
@@ -118,7 +117,6 @@ const TEST_ITEMS = [
   { id: 'va',    icon: '🧩', title: 'VA Test',    screen: 'TestMain'    },
 ];
 
-// ─── SKELETON ────────────────────────────────────────────────────────────────
 const SkeletonPulse = ({ style }) => {
   const anim = useRef(new Animated.Value(0.4)).current;
   useEffect(() => {
