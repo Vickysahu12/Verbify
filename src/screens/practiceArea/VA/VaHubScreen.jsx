@@ -508,7 +508,6 @@ const s = StyleSheet.create({
     color: C.gold, letterSpacing: 1.1, marginTop: sc(1),
   },
 
-  // Streak pill — same width as navBtn so layout is balanced
   navStreakPill: {
     minWidth: sc(38), height: sc(38),
     backgroundColor: C.goldSoft,
