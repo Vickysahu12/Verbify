@@ -1,29 +1,40 @@
-import React, {useState} from 'react';
+/**
+ * MockListScreen.jsx
+ * ─────────────────────────────────────────────────────────────────────────────
+ * FIXES:
+ * - paddingTop defined twice in navbar (Platform.OS one + hardcoded 35) → removed
+ * - SafeAreaView imported from react-native-safe-area-context (not react-native)
+ * - sc() responsive scaling added throughout
+ * - Navbar title absolutely centered (consistent with rest of app)
+ * ─────────────────────────────────────────────────────────────────────────────
+ * BACKEND: Replace MOCK_DATA with → GET /mocks/  (Bearer token)
+ */
+
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  StatusBar,
-  SafeAreaView,
-  Platform,
+  View, Text, StyleSheet, FlatList,
+  TouchableOpacity, StatusBar, Dimensions, Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MockCard from './componentss/MockCard';
 import CategoryFilter from './componentss/CategoryFilters';
 
+const { width: SW } = Dimensions.get('window');
+const sc = n => (SW / 390) * n;
+
 // ─── THEME ───────────────────────────────────────────────────────────────────
-const COLORS = {
-  primary: '#1F3B1F',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F4F8F5',
-  border: '#E0EDE6',
+const C = {
+  primary:     '#1F3B1F',
+  surface:     '#FFFFFF',
+  surfaceAlt:  '#FFFFFF',
+  border:      '#E0EDE6',
+  borderLight: '#EEF6F1',
   textPrimary: '#0D1F15',
-  textMuted: '#9DB5A5',
+  textMuted:   '#9DB5A5',
 };
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
-// TODO: Replace with API call — GET /mocks/
+// TODO: Replace with → GET /mocks/  (Bearer token)
 const MOCK_DATA = [
   {
     id: '1',
@@ -162,7 +173,7 @@ const MOCK_DATA = [
 ];
 
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
-const MockListScreen = ({navigation}) => {
+const MockListScreen = ({ navigation }) => {
   const [activeFilter, setActiveFilter] = useState('all');
 
   const filtered =
@@ -170,7 +181,6 @@ const MockListScreen = ({navigation}) => {
       ? MOCK_DATA
       : MOCK_DATA.filter(m => m.type === activeFilter);
 
-  // Count per category for the filter badges
   const counts = {
     all:   MOCK_DATA.length,
     full:  MOCK_DATA.filter(m => m.type === 'full').length,
@@ -179,34 +189,36 @@ const MockListScreen = ({navigation}) => {
   };
 
   const handleStartTest = item => {
-    navigation?.navigate('MockDetail', {mockId: item.id});
+    navigation?.navigate('MockDetail', { mockId: item.id });
   };
 
-  // Sticky header = navbar + filter tabs rendered outside FlatList
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={C.surface} />
 
-      {/* ── STICKY NAVBAR ── */}
-      <View style={styles.navbar}>
-        {/* Back button */}
+      {/* ── NAVBAR ── */}
+      <View style={s.navbar}>
+        {/* Back btn — fixed width so title stays centered */}
         <TouchableOpacity
-          style={styles.backBtn}
+          style={s.backBtn}
           onPress={() => navigation?.goBack()}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-          <View style={styles.backIconWrap}>
-            <Text style={styles.backIcon}>‹</Text>
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <View style={s.backIconWrap}>
+            <Text style={s.backIcon}>‹</Text>
           </View>
         </TouchableOpacity>
 
-        {/* Centered title */}
-        <Text style={styles.navTitle}>Mock Tests</Text>
+        {/* ✅ Absolutely centered title — not affected by back btn width */}
+        <View style={s.navCenter} pointerEvents="none">
+          <Text style={s.navTitle}>Mock Tests</Text>
+        </View>
 
-        {/* Right spacer to keep title truly centered */}
-        <View style={styles.navRight} />
+        {/* Right spacer — same width as back btn to balance */}
+        <View style={s.navRight} />
       </View>
 
-      {/* ── STICKY CATEGORY FILTER ── */}
+      {/* ── CATEGORY FILTER (sticky — outside FlatList) ── */}
       <CategoryFilter
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
@@ -217,17 +229,17 @@ const MockListScreen = ({navigation}) => {
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
-        renderItem={({item, index}) => (
+        renderItem={({ item, index }) => (
           <MockCard item={item} onPress={handleStartTest} index={index} />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={s.listContent}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={{height: 14}} />}
+        ItemSeparatorComponent={() => <View style={{ height: sc(14) }} />}
         ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={styles.emptyTitle}>No tests found</Text>
-            <Text style={styles.emptySubtitle}>Try a different category</Text>
+          <View style={s.emptyWrap}>
+            <Text style={s.emptyIcon}>🔍</Text>
+            <Text style={s.emptyTitle}>No tests found</Text>
+            <Text style={s.emptySubtitle}>Try a different category</Text>
           </View>
         }
       />
@@ -235,86 +247,70 @@ const MockListScreen = ({navigation}) => {
   );
 };
 
-// ─── STYLES ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceAlt,
-  },
+// ─── STYLES ──────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.surfaceAlt },
 
-  // Navbar
+  // ── Navbar ──
+  // ✅ FIX: paddingTop was defined TWICE before:
+  //    Platform.OS === 'android' ? 14 : 8  AND  paddingTop: 35  (second one won)
+  //    Now SafeAreaView edges={['top']} handles status bar — uniform sc(10) here
   navbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 14 : 8,
-    paddingBottom: 14,
+    backgroundColor: C.surface,
+    paddingHorizontal: sc(16),
+    paddingTop:    sc(10),
+    paddingBottom: sc(12),
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    // Sticky — rendered outside FlatList so it never scrolls
-    paddingTop:35
+    borderBottomColor: C.border,
   },
   backBtn: {
-    width: 36,
+    width: sc(36),
     alignItems: 'flex-start',
+    zIndex: 1,
   },
   backIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: COLORS.surfaceAlt,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: sc(34), height: sc(34),
+    borderRadius: sc(10),
+    backgroundColor: C.surfaceAlt,
+    borderWidth: 1, borderColor: C.border,
+    justifyContent: 'center', alignItems: 'center',
   },
   backIcon: {
-    fontSize: 22,
-    color: COLORS.textPrimary,
-    lineHeight: 26,
-    marginTop: -2,
+    fontSize: sc(22), color: C.textPrimary,
+    lineHeight: sc(26), marginTop: -sc(1),
+  },
+
+  // Absolutely centered title — mathematically center, works on all screen sizes
+  navCenter: {
+    position: 'absolute',
+    left: 0, right: 0,
+    alignItems: 'center',
   },
   navTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    letterSpacing: -0.3,
-    textAlign: 'center',
-    flex: 1,
-  },
-  navRight: {
-    width: 36, // mirrors backBtn width to keep title centered
+    fontSize: sc(17), fontWeight: '800',
+    color: C.textPrimary, letterSpacing: -0.3,
   },
 
-  // List
+  navRight: { width: sc(36), zIndex: 1 },
+
+  // ── List ──
   listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: sc(16),
+    paddingTop: sc(16),
+    paddingBottom: sc(40),
   },
 
-  // Empty state
+  // ── Empty state ──
   emptyWrap: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: sc(80),
   },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    fontWeight: '500',
-  },
+  emptyIcon:     { fontSize: sc(38), marginBottom: sc(12) },
+  emptyTitle:    { fontSize: sc(16), fontWeight: '700', color: C.textPrimary, marginBottom: sc(4) },
+  emptySubtitle: { fontSize: sc(13), color: C.textMuted, fontWeight: '500' },
 });
 
 export default MockListScreen;

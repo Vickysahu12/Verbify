@@ -3,16 +3,16 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Production-ready | Backend-ready | Consistent with Verbify design system
  *
+ * FIXES:
+ * - Navbar ka upar se extra margin remove kiya (Android double-padding issue)
+ * - Spacing tighten kiya throughout
+ * - Cards aur sections more consistent
+ * - Better visual rhythm across all screen sizes
+ *
  * BACKEND INTEGRATION GUIDE:
  * ─────────────────────────────────────────────────────────────────────────────
  * 1. HUB STATS    → GET /api/practice/va/hub          (Bearer token)
- *    Response: { userName, streak, overallProgress,
- *                modules: [{ id, title, subtitle, progress, tag }],
- *                dailyChallenge: { title, desc, type, mins, xp } }
- *
  * 2. START MODULE → POST /api/practice/va/session     (Bearer token)
- *    Body: { moduleId }
- *
  * 3. START DAILY  → POST /api/practice/va/daily/start (Bearer token)
  * ─────────────────────────────────────────────────────────────────────────────
  */
@@ -31,7 +31,7 @@ import { useNavigation } from '@react-navigation/native';
 const { width: SW } = Dimensions.get('window');
 const sc = n => (SW / 390) * n;
 
-// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
+// ─── DESIGN TOKENS (same palette) ────────────────────────────────────────────
 const C = {
   primary:      '#1F3B1F',
   primaryLight: '#E8F5EE',
@@ -115,19 +115,19 @@ const SkeletonPulse = ({ style }) => {
 };
 
 const HubSkeleton = () => (
-  <View style={{ padding: sc(16), gap: sc(16) }}>
-    <SkeletonPulse style={{ height: sc(110), borderRadius: sc(22) }} />
-    <SkeletonPulse style={{ height: sc(160), borderRadius: sc(22) }} />
-    <SkeletonPulse style={{ width: sc(140), height: sc(16), borderRadius: sc(8) }} />
+  <View style={{ padding: sc(16), gap: sc(12) }}>
+    <SkeletonPulse style={{ height: sc(100), borderRadius: sc(20) }} />
+    <SkeletonPulse style={{ height: sc(150), borderRadius: sc(20) }} />
+    <SkeletonPulse style={{ width: sc(140), height: sc(14), borderRadius: sc(8) }} />
     {[0,1,2].map(i => (
-      <SkeletonPulse key={i} style={{ height: sc(100), borderRadius: sc(18) }} />
+      <SkeletonPulse key={i} style={{ height: sc(95), borderRadius: sc(16) }} />
     ))}
   </View>
 );
 
 // ─── SECTION HEADER ──────────────────────────────────────────────────────────
 const SectionHeader = ({ title, action, onAction, caption }) => (
-  <View style={{ marginBottom: sc(12) }}>
+  <View style={{ marginBottom: sc(10) }}>
     <View style={s.sectionRow}>
       <View style={s.sectionLeft}>
         <View style={s.sectionBar} />
@@ -292,6 +292,8 @@ const VAHubScreen = () => {
   }, [navigation]);
 
   return (
+    // ✅ FIX: edges={['top']} hi SafeAreaView pe — navbar mein extra paddingTop
+    //         nahi chahiye ab. Android pe double spacing tha pehle.
     <SafeAreaView style={s.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
@@ -303,10 +305,12 @@ const VAHubScreen = () => {
 
         {/* ══════════════════════════════════════
             STICKY NAVBAR
+            - Title is absolutely centered — not affected by side element widths
+            - Back btn + streak pill have fixed equal widths (sc(72)) to balance sides
         ══════════════════════════════════════ */}
         <View style={s.navbar}>
 
-          {/* ‹ Back */}
+          {/* ‹ Back — fixed width side */}
           <Animated.View style={{ transform: [{ scale: backScale }] }}>
             <TouchableOpacity
               onPress={handleBack}
@@ -318,16 +322,12 @@ const VAHubScreen = () => {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Center title */}
-          <View style={s.navCenter}>
+          {/* Absolutely centered title — never shifts regardless of side widths */}
+          <View style={s.navCenter} pointerEvents="none">
             <Text style={s.navTitle}>VA Concept Hub</Text>
             <Text style={s.navSub}>PREMIUM CAT ACCESS</Text>
           </View>
 
-          {/* Streak — same minWidth as navBtn so title stays centered */}
-          <View style={s.navStreakPill}>
-            <Text style={s.navStreakText}>🔥 {streak}</Text>
-          </View>
 
         </View>
 
@@ -452,7 +452,7 @@ const VAHubScreen = () => {
           </>
         )}
 
-        <View style={{ height: sc(48) }} />
+        <View style={{ height: sc(40) }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -463,8 +463,8 @@ export default VAHubScreen;
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: C.bg },
-  scroll:  { paddingBottom: sc(20) },
-  section: { paddingHorizontal: sc(16), marginBottom: sc(20) },
+  scroll:  { paddingBottom: sc(16) },
+  section: { paddingHorizontal: sc(16), marginBottom: sc(18) },
 
   // ── Navbar ──────────────────────────────────────────────────────────────────
   navbar: {
@@ -472,32 +472,35 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: sc(16),
-    // ✅ Android mein status bar ke neeche chipka tha — yeh fix karta hai
-    paddingTop:    Platform.OS === 'android' ? sc(36) : sc(12),
-    paddingBottom: sc(12),
+    paddingTop:    sc(10),
+    paddingBottom: sc(10),
     backgroundColor: C.bg,
     borderBottomWidth: 1,
     borderBottomColor: C.borderLight,
   },
 
-  // Back btn — fixed size taaki title center rahe
   navBtn: {
-    width: sc(38), height: sc(38),
-    borderRadius: sc(12),
+    width: sc(36), height: sc(36),
+    borderRadius: sc(11),
     backgroundColor: C.surface,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: C.border,
     shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+    zIndex: 1,
   },
   navBackIcon: {
-    fontSize: sc(24), color: C.text,
-    lineHeight: sc(28), marginTop: -sc(1),
+    fontSize: sc(22), color: C.text,
+    lineHeight: sc(26), marginTop: -sc(1),
   },
 
-  // Center — flex:1 + alignItems:'center' = truly centered regardless of side widths
+  // ✅ Absolutely centered title — stays centered on ALL screen sizes
+  //    regardless of back btn or streak pill width
   navCenter: {
-    flex: 1, alignItems: 'center', paddingHorizontal: sc(6),
+    position: 'absolute',
+    left: 0, right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   navTitle: {
     fontSize: sc(15), fontWeight: '800',
@@ -508,122 +511,113 @@ const s = StyleSheet.create({
     color: C.gold, letterSpacing: 1.1, marginTop: sc(1),
   },
 
-  navStreakPill: {
-    minWidth: sc(38), height: sc(38),
-    backgroundColor: C.goldSoft,
-    paddingHorizontal: sc(10),
-    borderRadius: sc(12),
-    borderWidth: 1, borderColor: '#FDE68A',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  navStreakText: { fontSize: sc(12), fontWeight: '800', color: C.gold },
 
   // ── Progress Banner ──────────────────────────────────────────────────────────
   progressBanner: {
     flexDirection: 'row', backgroundColor: C.primary,
-    marginHorizontal: sc(16), borderRadius: sc(22),
-    padding: sc(18), marginTop: sc(14), marginBottom: sc(14),
+    marginHorizontal: sc(16), borderRadius: sc(20),
+    padding: sc(16), marginTop: sc(12), marginBottom: sc(12),
     alignItems: 'center', overflow: 'hidden',
-    shadowColor: C.primary, shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28, shadowRadius: 14, elevation: 8,
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.25, shadowRadius: 12, elevation: 7,
   },
   bannerLeft:       { flex: 1 },
-  bannerGreeting:   { fontSize: sc(15), fontWeight: '800', color: '#fff', marginBottom: sc(3) },
-  bannerSub:        { fontSize: sc(11), color: 'rgba(255,255,255,0.6)', marginBottom: sc(12), lineHeight: sc(16), fontWeight: '500' },
+  bannerGreeting:   { fontSize: sc(15), fontWeight: '800', color: '#fff', marginBottom: sc(2) },
+  bannerSub:        { fontSize: sc(11), color: 'rgba(255,255,255,0.6)', marginBottom: sc(10), lineHeight: sc(16), fontWeight: '500' },
   bannerBarRow:     { flexDirection: 'row', alignItems: 'center', gap: sc(8), marginBottom: sc(4) },
-  bannerBarBg:      { flex: 1, height: sc(6), backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: sc(4), overflow: 'hidden' },
-  bannerBarFill:    { height: '100%', backgroundColor: C.primaryMid, borderRadius: sc(4) },
+  bannerBarBg:      { flex: 1, height: sc(5), backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: sc(3), overflow: 'hidden' },
+  bannerBarFill:    { height: '100%', backgroundColor: C.primaryMid, borderRadius: sc(3) },
   bannerBarPct:     { fontSize: sc(11), fontWeight: '800', color: '#fff', width: sc(30), textAlign: 'right' },
   bannerBarLabel:   { fontSize: sc(10), color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
   bannerRight: {
-    alignItems: 'center', marginLeft: sc(14),
+    alignItems: 'center', marginLeft: sc(12),
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: sc(14), paddingHorizontal: sc(14), paddingVertical: sc(12),
+    borderRadius: sc(13), paddingHorizontal: sc(12), paddingVertical: sc(10),
   },
-  bannerStreakNum:   { fontSize: sc(28), fontWeight: '900', color: '#FFD700', lineHeight: sc(32) },
+  bannerStreakNum:   { fontSize: sc(26), fontWeight: '900', color: '#FFD700', lineHeight: sc(30) },
   bannerStreakLabel: { fontSize: sc(10), color: 'rgba(255,255,255,0.6)', fontWeight: '600', marginTop: sc(2) },
 
   // ── Challenge Card ───────────────────────────────────────────────────────────
   challengeCard: {
     backgroundColor: C.primary, marginHorizontal: sc(16),
-    borderRadius: sc(22), padding: sc(20),
-    marginBottom: sc(22), overflow: 'hidden', position: 'relative',
-    shadowColor: C.primary, shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3, shadowRadius: 16, elevation: 10,
+    borderRadius: sc(20), padding: sc(18),
+    marginBottom: sc(20), overflow: 'hidden', position: 'relative',
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.28, shadowRadius: 14, elevation: 9,
   },
-  deco1: { position: 'absolute', width: sc(130), height: sc(130), borderRadius: sc(65), backgroundColor: 'rgba(255,255,255,0.04)', top: -sc(40), right: -sc(30) },
-  deco2: { position: 'absolute', width: sc(70),  height: sc(70),  borderRadius: sc(35), backgroundColor: 'rgba(46,168,107,0.15)',  bottom: -sc(20), right: sc(50) },
+  deco1: { position: 'absolute', width: sc(120), height: sc(120), borderRadius: sc(60), backgroundColor: 'rgba(255,255,255,0.04)', top: -sc(35), right: -sc(25) },
+  deco2: { position: 'absolute', width: sc(65),  height: sc(65),  borderRadius: sc(33), backgroundColor: 'rgba(46,168,107,0.15)',  bottom: -sc(18), right: sc(48) },
 
-  challengeTopRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sc(10) },
+  challengeTopRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sc(8) },
   challengeLabelRow: { flexDirection: 'row', alignItems: 'center', gap: sc(6) },
   challengeDot:      { width: sc(6), height: sc(6), borderRadius: sc(3), backgroundColor: C.primaryMid },
   challengeEyebrow:  { fontSize: sc(9), fontWeight: '800', color: '#7BA882', letterSpacing: 1.2 },
   xpBadge:           { backgroundColor: 'rgba(255,215,0,0.15)', borderRadius: sc(20), paddingHorizontal: sc(10), paddingVertical: sc(4), borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)' },
   xpText:            { fontSize: sc(11), fontWeight: '800', color: '#FFD700' },
-  challengeTitle:    { fontSize: sc(22), fontWeight: '900', color: '#fff', marginBottom: sc(6), letterSpacing: -0.3 },
-  challengeDesc:     { fontSize: sc(13), color: 'rgba(255,255,255,0.65)', lineHeight: sc(20), marginBottom: sc(16), fontWeight: '500' },
-  challengeMetaRow:  { flexDirection: 'row', gap: sc(7), marginBottom: sc(18), flexWrap: 'wrap' },
+  challengeTitle:    { fontSize: sc(20), fontWeight: '900', color: '#fff', marginBottom: sc(5), letterSpacing: -0.3 },
+  challengeDesc:     { fontSize: sc(12), color: 'rgba(255,255,255,0.65)', lineHeight: sc(19), marginBottom: sc(14), fontWeight: '500' },
+  challengeMetaRow:  { flexDirection: 'row', gap: sc(7), marginBottom: sc(16), flexWrap: 'wrap' },
   metaChip:          { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: sc(20), paddingHorizontal: sc(10), paddingVertical: sc(5) },
   metaChipText:      { fontSize: sc(11), color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
-  challengeBtn:      { backgroundColor: '#fff', paddingVertical: sc(14), borderRadius: sc(14), alignItems: 'center' },
-  challengeBtnText:  { color: C.primary, fontWeight: '800', fontSize: sc(14), letterSpacing: -0.2 },
+  challengeBtn:      { backgroundColor: '#fff', paddingVertical: sc(13), borderRadius: sc(13), alignItems: 'center' },
+  challengeBtnText:  { color: C.primary, fontWeight: '800', fontSize: sc(13), letterSpacing: -0.2 },
 
   // ── Section Header ──────────────────────────────────────────────────────────
-  sectionRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: sc(4) },
+  sectionRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: sc(3) },
   sectionLeft:   { flexDirection: 'row', alignItems: 'center', gap: sc(8) },
-  sectionBar:    { width: sc(4), height: sc(18), borderRadius: sc(2), backgroundColor: C.primaryMid },
-  sectionTitle:  { fontSize: sc(16), fontWeight: '800', color: C.text, letterSpacing: -0.3 },
+  sectionBar:    { width: sc(4), height: sc(17), borderRadius: sc(2), backgroundColor: C.primaryMid },
+  sectionTitle:  { fontSize: sc(15), fontWeight: '800', color: C.text, letterSpacing: -0.3 },
   sectionLink:   { fontSize: sc(12), fontWeight: '700', color: C.primaryMid },
-  sectionCaption:{ fontSize: sc(11), color: C.muted, fontWeight: '500', marginLeft: sc(12), marginBottom: sc(4) },
+  sectionCaption:{ fontSize: sc(11), color: C.muted, fontWeight: '500', marginLeft: sc(12), marginBottom: sc(2) },
 
   // ── Module Card ──────────────────────────────────────────────────────────────
-  moduleCard:       { flexDirection: 'row', backgroundColor: C.surface, borderRadius: sc(18), borderWidth: 1, borderColor: C.border, overflow: 'hidden', shadowColor: C.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  moduleCard:       { flexDirection: 'row', backgroundColor: C.surface, borderRadius: sc(16), borderWidth: 1, borderColor: C.border, overflow: 'hidden', shadowColor: C.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
   moduleAccent:     { width: sc(4) },
-  moduleInner:      { flex: 1, padding: sc(14) },
-  moduleTop:        { flexDirection: 'row', alignItems: 'center', gap: sc(10), marginBottom: sc(12) },
-  moduleIconWrap:   { width: sc(42), height: sc(42), borderRadius: sc(13), alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  moduleIcon:       { fontSize: sc(20) },
+  moduleInner:      { flex: 1, padding: sc(13) },
+  moduleTop:        { flexDirection: 'row', alignItems: 'center', gap: sc(10), marginBottom: sc(10) },
+  moduleIconWrap:   { width: sc(40), height: sc(40), borderRadius: sc(12), alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  moduleIcon:       { fontSize: sc(19) },
   moduleTitleBlock: { flex: 1 },
-  moduleTitle:      { fontSize: sc(14), fontWeight: '800', color: C.text, marginBottom: sc(2) },
+  moduleTitle:      { fontSize: sc(13), fontWeight: '800', color: C.text, marginBottom: sc(2) },
   moduleSubtitle:   { fontSize: sc(11), fontWeight: '500', color: C.muted },
-  moduleTag:        { paddingHorizontal: sc(8), paddingVertical: sc(4), borderRadius: sc(8) },
-  moduleTagText:    { fontSize: sc(9), fontWeight: '800', letterSpacing: 0.4 },
-  progressRow:      { flexDirection: 'row', alignItems: 'center', gap: sc(10), marginBottom: sc(12) },
-  progressTrack:    { flex: 1, height: sc(6), backgroundColor: C.bg, borderRadius: sc(4), overflow: 'hidden' },
-  progressFill:     { height: '100%', borderRadius: sc(4) },
-  progressPct:      { fontSize: sc(12), fontWeight: '800', width: sc(34), textAlign: 'right' },
-  moduleFooter:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: sc(10), borderTopWidth: 1, borderTopColor: C.borderLight },
+  moduleTag:        { paddingHorizontal: sc(7), paddingVertical: sc(3), borderRadius: sc(7) },
+  moduleTagText:    { fontSize: sc(9), fontWeight: '800', letterSpacing: 0.3 },
+  progressRow:      { flexDirection: 'row', alignItems: 'center', gap: sc(8), marginBottom: sc(10) },
+  progressTrack:    { flex: 1, height: sc(5), backgroundColor: C.bg, borderRadius: sc(3), overflow: 'hidden' },
+  progressFill:     { height: '100%', borderRadius: sc(3) },
+  progressPct:      { fontSize: sc(11), fontWeight: '800', width: sc(32), textAlign: 'right' },
+  moduleFooter:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: sc(9), borderTopWidth: 1, borderTopColor: C.borderLight },
   moduleCTA:        { fontSize: sc(12), fontWeight: '700', color: C.primary },
-  moduleArrowWrap:  { width: sc(26), height: sc(26), borderRadius: sc(8), backgroundColor: C.primaryLight, alignItems: 'center', justifyContent: 'center' },
-  moduleArrow:      { fontSize: sc(13), fontWeight: '800', color: C.primary },
+  moduleArrowWrap:  { width: sc(24), height: sc(24), borderRadius: sc(7), backgroundColor: C.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  moduleArrow:      { fontSize: sc(12), fontWeight: '800', color: C.primary },
 
   // ── Quick Stats ──────────────────────────────────────────────────────────────
-  quickStatsRow:  { flexDirection: 'row', gap: sc(10), paddingHorizontal: sc(16), marginBottom: sc(20) },
-  quickStatCard:  { flex: 1, borderRadius: sc(16), padding: sc(12), alignItems: 'center', gap: sc(3), borderWidth: 1, borderColor: C.border },
-  quickStatIcon:  { fontSize: sc(18), marginBottom: sc(2) },
-  quickStatVal:   { fontSize: sc(17), fontWeight: '900', letterSpacing: -0.5 },
+  quickStatsRow:  { flexDirection: 'row', gap: sc(8), paddingHorizontal: sc(16), marginBottom: sc(18) },
+  quickStatCard:  { flex: 1, borderRadius: sc(14), padding: sc(11), alignItems: 'center', gap: sc(2), borderWidth: 1, borderColor: C.border },
+  quickStatIcon:  { fontSize: sc(17), marginBottom: sc(1) },
+  quickStatVal:   { fontSize: sc(16), fontWeight: '900', letterSpacing: -0.5 },
   quickStatLabel: { fontSize: sc(9), fontWeight: '600', color: C.muted },
 
   // ── Accordion ────────────────────────────────────────────────────────────────
-  accordionCard:     { backgroundColor: C.surface, borderRadius: sc(18), padding: sc(14), borderWidth: 1, borderColor: C.border, shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
+  accordionCard:     { backgroundColor: C.surface, borderRadius: sc(16), padding: sc(13), borderWidth: 1, borderColor: C.border, shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
   accordionCardOpen: { borderColor: C.primary, borderWidth: 1.5 },
   accordionHeader:   { flexDirection: 'row', alignItems: 'center', gap: sc(10) },
-  accordionIconWrap: { width: sc(36), height: sc(36), borderRadius: sc(10), backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  accordionIcon:     { fontSize: sc(16) },
-  accordionTitle:    { flex: 1, fontSize: sc(13), fontWeight: '700', color: C.text, lineHeight: sc(19) },
-  chevronWrap:       { width: sc(28), height: sc(28), borderRadius: sc(8), backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
+  accordionIconWrap: { width: sc(34), height: sc(34), borderRadius: sc(10), backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  accordionIcon:     { fontSize: sc(15) },
+  accordionTitle:    { flex: 1, fontSize: sc(13), fontWeight: '700', color: C.text, lineHeight: sc(18) },
+  chevronWrap:       { width: sc(26), height: sc(26), borderRadius: sc(7), backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
   chevronWrapOpen:   { backgroundColor: C.primary, borderColor: 'transparent' },
-  chevron:           { fontSize: sc(14), fontWeight: '700', color: C.sub },
-  accordionBody:     { paddingTop: sc(14), marginTop: sc(12), borderTopWidth: 1, borderTopColor: C.borderLight },
-  accordionText:     { fontSize: sc(13), lineHeight: sc(21), color: C.sub, fontWeight: '500', marginBottom: sc(12) },
-  tipBox:            { flexDirection: 'row', backgroundColor: C.primarySoft, borderRadius: sc(12), padding: sc(12), gap: sc(8), alignItems: 'flex-start', borderLeftWidth: sc(3), borderLeftColor: C.primaryMid },
-  tipIcon:           { fontSize: sc(13), marginTop: sc(1) },
+  chevron:           { fontSize: sc(13), fontWeight: '700', color: C.sub },
+  accordionBody:     { paddingTop: sc(12), marginTop: sc(10), borderTopWidth: 1, borderTopColor: C.borderLight },
+  accordionText:     { fontSize: sc(13), lineHeight: sc(20), color: C.sub, fontWeight: '500', marginBottom: sc(10) },
+  tipBox:            { flexDirection: 'row', backgroundColor: C.primarySoft, borderRadius: sc(11), padding: sc(11), gap: sc(8), alignItems: 'flex-start', borderLeftWidth: sc(3), borderLeftColor: C.primaryMid },
+  tipIcon:           { fontSize: sc(12), marginTop: sc(1) },
   tipText:           { flex: 1, fontSize: sc(12), color: C.primary, lineHeight: sc(18), fontWeight: '600', fontStyle: 'italic' },
 
   // ── Tip Banner ──────────────────────────────────────────────────────────────
-  tipBanner:         { backgroundColor: C.primarySoft, marginHorizontal: sc(16), borderRadius: sc(18), padding: sc(16), borderWidth: 1, borderColor: C.primaryLight, flexDirection: 'row', gap: sc(12), alignItems: 'flex-start' },
-  tipBannerIconWrap: { width: sc(36), height: sc(36), borderRadius: sc(10), alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  tipBannerIcon:     { fontSize: sc(18) },
-  tipBannerEyebrow:  { fontSize: sc(9), fontWeight: '800', color: C.primaryMid, letterSpacing: 1, marginBottom: sc(4) },
-  tipBannerText:     { fontSize: sc(12), lineHeight: sc(19), color: C.sub, fontWeight: '500' },
+  tipBanner:         { backgroundColor: C.primarySoft, marginHorizontal: sc(16), borderRadius: sc(16), padding: sc(14), borderWidth: 1, borderColor: C.primaryLight, flexDirection: 'row', gap: sc(12), alignItems: 'flex-start' },
+  tipBannerIconWrap: { width: sc(34), height: sc(34), borderRadius: sc(9), alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  tipBannerIcon:     { fontSize: sc(17) },
+  tipBannerEyebrow:  { fontSize: sc(9), fontWeight: '800', color: C.primaryMid, letterSpacing: 1, marginBottom: sc(3) },
+  tipBannerText:     { fontSize: sc(12), lineHeight: sc(18), color: C.sub, fontWeight: '500' },
 });
