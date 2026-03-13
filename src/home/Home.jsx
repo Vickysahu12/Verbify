@@ -396,7 +396,6 @@ const handleTest = useCallback((screen) => {
       >
         {loading ? <HomeSkeleton /> : (
           <>
-            {/* ── TODAY'S FOCUS CARD ── */}
             <View style={s.focusCard}>
               {/* Header row */}
               <View style={s.focusTopRow}>
