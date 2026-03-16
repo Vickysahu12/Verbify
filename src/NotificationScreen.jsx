@@ -677,7 +677,6 @@ const s = StyleSheet.create({
   emptyTitle: { fontSize: sc(17), fontWeight: '800', color: C.text, textAlign: 'center' },
   emptyDesc:  { fontSize: sc(13), color: C.muted,  lineHeight: sc(20), textAlign: 'center', fontWeight: '500' },
 
-  // ── Error ────────────────────────────────────────────────────────────────────
   errorWrap: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     padding: sc(32), gap: sc(10),
