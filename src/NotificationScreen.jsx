@@ -666,7 +666,6 @@ const s = StyleSheet.create({
 
   cardDivider: { height: 1, backgroundColor: C.borderLight, marginLeft: sc(68) },
 
-  // ── Empty ────────────────────────────────────────────────────────────────────
   emptyWrap: { alignItems: 'center', paddingTop: sc(72), paddingHorizontal: sc(40), gap: sc(10) },
   emptyIconWrap: {
     width: sc(72), height: sc(72), borderRadius: sc(22),
