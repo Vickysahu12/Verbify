@@ -1,20 +1,3 @@
-/**
- * HomeScreen.jsx
- * ─────────────────────────────────────────────────────────────────────────────
- * Production-ready | Backend-ready | Consistent with Verbify design system
- *
- * BACKEND INTEGRATION GUIDE:
- * ─────────────────────────────────────────────────────────────────────────────
- * 1. USER STATS     → GET /api/user/home-stats      (Bearer token)
- *    Response: { name, dayCount, streak, studyTime, todayProgress,
- *                practiceStats: { vocab, reading, rc, va },
- *                testStats: { rc, vocab, va },
- *                weekActivity: boolean[7] }
- *
- * 2. REFRESH        → Same endpoint, pull-to-refresh
- * ─────────────────────────────────────────────────────────────────────────────
- */
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
@@ -22,9 +5,17 @@ import {
   RefreshControl, Platform, Animated,
   Dimensions,
 } from 'react-native';
+import axios from 'axios';
+import { AuthService } from '../services/AuthService';
 
 const { width: SW } = Dimensions.get('window');
 const sc = n => (SW / 390) * n;
+
+const api = axios.create({
+  baseURL: 'http://10.182.41.220:8000',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+});
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const C = {
@@ -51,28 +42,6 @@ const C = {
   shadow:       '#0D1F15',
 };
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-// TODO: Replace with → GET /api/user/home-stats
-const MOCK_DATA = {
-  name:          'Aryan',
-  dayCount:      12,
-  streak:        5,
-  studyTime:     '4h 20m',
-  todayProgress: 65,
-  practiceStats: {
-    vocab:   { done: 10, total: 20 },
-    reading: { minutes: 12        },
-    rc:      { passages: 2        },
-    va:      { types: 'PJ • OOO'  },
-  },
-  testStats: {
-    rc:    { label: 'Not attempted' },
-    vocab: { label: 'Avg 62%'       },
-    va:    { label: '2 days ago'    },
-  },
-  weekActivity: [true, true, true, true, true, false, false],
-};
-
 // ─── PRACTICE CARDS CONFIG ───────────────────────────────────────────────────
 const PRACTICE_ITEMS = [
   {
@@ -89,10 +58,6 @@ const PRACTICE_ITEMS = [
     screen: 'PracticeMain',
     accent: C.blue, bg: C.blueSoft,
   },
-
-  
-
-
   {
     id: 'rc',
     icon: '📄', title: 'RC Practice',
@@ -100,8 +65,6 @@ const PRACTICE_ITEMS = [
     screen: 'PracticeMain',
     accent: C.correct, bg: C.correctBg,
   },
-
-  
   {
     id: 'va',
     icon: '🧩', title: 'VA Practice',
@@ -112,11 +75,12 @@ const PRACTICE_ITEMS = [
 ];
 
 const TEST_ITEMS = [
-  { id: 'rc',    icon: '📖', title: 'RC Test',    screen: 'TestMain'    },
+  { id: 'rc',    icon: '📖', title: 'RC Test',    screen: 'TestMain' },
   { id: 'vocab', icon: '📝', title: 'Vocab Test', screen: 'TestMain' },
-  { id: 'va',    icon: '🧩', title: 'VA Test',    screen: 'TestMain'    },
+  { id: 'va',    icon: '🧩', title: 'VA Test',    screen: 'TestMain' },
 ];
 
+// ─── SKELETON ────────────────────────────────────────────────────────────────
 const SkeletonPulse = ({ style }) => {
   const anim = useRef(new Animated.Value(0.4)).current;
   useEffect(() => {
@@ -132,9 +96,7 @@ const SkeletonPulse = ({ style }) => {
 
 const HomeSkeleton = () => (
   <View style={{ paddingHorizontal: sc(16), paddingTop: sc(8), gap: sc(16) }}>
-    {/* Focus card */}
     <SkeletonPulse style={{ height: sc(160), borderRadius: sc(20) }} />
-    {/* Section */}
     <SkeletonPulse style={{ width: sc(80), height: sc(14), borderRadius: sc(7) }} />
     <View style={{ flexDirection: 'row', gap: sc(10) }}>
       {[0,1,2,3].map(i => (
@@ -153,11 +115,11 @@ const HomeSkeleton = () => (
 // ─── GREETING ────────────────────────────────────────────────────────────────
 const getGreeting = () => {
   const h = new Date().getHours();
-  if (h < 5)  return { text: 'Good Night',      emoji: '🌙' };
-  if (h < 12) return { text: 'Good Morning',    emoji: '☀️' };
-  if (h < 17) return { text: 'Good Afternoon',  emoji: '🌤️' };
-  if (h < 21) return { text: 'Good Evening',    emoji: '🌆' };
-  return              { text: 'Good Night',      emoji: '🌙' };
+  if (h < 5)  return { text: 'Good Night',     emoji: '🌙' };
+  if (h < 12) return { text: 'Good Morning',   emoji: '☀️' };
+  if (h < 17) return { text: 'Good Afternoon', emoji: '🌤️' };
+  if (h < 21) return { text: 'Good Evening',   emoji: '🌆' };
+  return             { text: 'Good Night',     emoji: '🌙' };
 };
 
 // ─── PRACTICE CARD ────────────────────────────────────────────────────────────
@@ -179,19 +141,13 @@ const PracticeCard = React.memo(({ item, subtitle, onPress, delay }) => {
     Animated.spring(pressScale, { toValue: 1,    useNativeDriver: true, speed: 60 }).start();
 
   return (
-    <Animated.View style={{
-      flex: 1,
-      opacity: fade,
-      transform: [{ translateY: slideY }, { scale: pressScale }],
-    }}>
+    <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateY: slideY }, { scale: pressScale }] }}>
       <TouchableOpacity
         style={s.practiceCard}
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         activeOpacity={1}
-        accessibilityRole="button"
-        accessibilityLabel={item.title}
       >
         <View style={[s.practiceIconWrap, { backgroundColor: item.bg }]}>
           <Text style={s.practiceIcon}>{item.icon}</Text>
@@ -210,7 +166,6 @@ const TestCard = React.memo(({ item, statusLabel, onPress }) => {
     Animated.spring(pressScale, { toValue: 0.95, useNativeDriver: true, speed: 60 }).start();
   const onPressOut = () =>
     Animated.spring(pressScale, { toValue: 1,    useNativeDriver: true, speed: 60 }).start();
-
   const isNotAttempted = statusLabel === 'Not attempted';
 
   return (
@@ -221,19 +176,11 @@ const TestCard = React.memo(({ item, statusLabel, onPress }) => {
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         activeOpacity={1}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.title}: ${statusLabel}`}
       >
         <Text style={s.testIcon}>{item.icon}</Text>
         <Text style={s.testTitle}>{item.title}</Text>
-        <View style={[
-          s.testStatusPill,
-          { backgroundColor: isNotAttempted ? C.bg : C.primaryLight },
-        ]}>
-          <Text style={[
-            s.testStatusText,
-            { color: isNotAttempted ? C.muted : C.primary },
-          ]} numberOfLines={1}>
+        <View style={[s.testStatusPill, { backgroundColor: isNotAttempted ? C.bg : C.primaryLight }]}>
+          <Text style={[s.testStatusText, { color: isNotAttempted ? C.muted : C.primary }]} numberOfLines={1}>
             {statusLabel}
           </Text>
         </View>
@@ -259,34 +206,44 @@ const SectionHeader = ({ title, action, onAction }) => (
 
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 const HomeScreen = ({ navigation }) => {
-  const [data,      setData]      = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [refreshing,setRefreshing]= useState(false);
-  const [error,     setError]     = useState(null);
-  const [unreadCount, setUnreadCount] = useState(2); // TODO: from notifications API
+  const [data,       setData]       = useState(null);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error,      setError]      = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const headerFade   = useRef(new Animated.Value(0)).current;
 
-  // ── Load data ──
+  // ── Load data from backend ──
   const loadData = useCallback(async (isRefresh = false) => {
     if (!isRefresh) setLoading(true);
     setError(null);
     try {
-      // TODO: Replace with API call
-      // ─────────────────────────────────────────────────────────────
-      // const token = await Keychain.getGenericPassword();
-      // const res = await fetch(`${Config.API_BASE_URL}/api/user/home-stats`, {
-      //   headers: { Authorization: `Bearer ${token.password}` },
-      // });
-      // if (!res.ok) throw new Error('Failed to load');
-      // const json = await res.json();
-      // setData(json);
-      // ─────────────────────────────────────────────────────────────
-
-      // Simulating network delay
-      await new Promise(r => setTimeout(r, 600));
-      setData(MOCK_DATA);
+      const token = await AuthService.getToken();
+      const response = await api.get('/user/home-stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const d = response.data;
+      setData({
+        name:          d.name,
+        dayCount:      d.day_count,
+        streak:        d.streak,
+        studyTime:     d.study_time,
+        todayProgress: d.today_progress,
+        practiceStats: {
+          vocab:   d.practice_stats?.vocab   ?? { done: 0, total: 20 },
+          reading: d.practice_stats?.reading ?? { minutes: 0 },
+          rc:      d.practice_stats?.rc      ?? { passages: 0 },
+          va:      d.practice_stats?.va      ?? { types: 'PJ • OOO' },
+        },
+        testStats: {
+          rc:    d.test_stats?.rc    ?? { label: 'Not attempted' },
+          vocab: d.test_stats?.vocab ?? { label: 'Not attempted' },
+          va:    d.test_stats?.va    ?? { label: 'Not attempted' },
+        },
+        weekActivity: d.week_activity ?? [false,false,false,false,false,false,false],
+      });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -297,20 +254,17 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => { loadData(); }, []);
 
-  // Animate header fade in
   useEffect(() => {
     if (!loading) {
       Animated.timing(headerFade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
     }
   }, [loading]);
 
-  // Progress bar animation
   useEffect(() => {
     if (data?.todayProgress != null) {
       Animated.timing(progressAnim, {
-        toValue:  data.todayProgress,
-        duration: 1000,
-        delay:    300,
+        toValue: data.todayProgress,
+        duration: 1000, delay: 300,
         useNativeDriver: false,
       }).start();
     }
@@ -321,17 +275,11 @@ const HomeScreen = ({ navigation }) => {
     await loadData(true);
   }, [loadData]);
 
-  const handlePractice = useCallback((screen) => {
-    navigation.navigate(screen);
-  }, [navigation]);
-
-const handleTest = useCallback((screen) => {
-    navigation.navigate('Tests', { screen: screen }); // pehle Tests tab, phir screen
-}, [navigation]);  
+  const handlePractice = useCallback((screen) => navigation.navigate(screen), [navigation]);
+  const handleTest = useCallback((screen) => navigation.navigate('Tests', { screen }), [navigation]);
 
   const greeting = getGreeting();
 
-  // ── Error state ──
   if (error && !data) {
     return (
       <SafeAreaView style={s.safe}>
