@@ -17,12 +17,11 @@ import {
   Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ─── Your custom icons ────────────────────────────────────────────────────────
 import backicon from "../../../assets/icon/backbutton.png";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+
 const { width } = Dimensions.get("window");
 const scale = (s) => (width / 375) * s;
 
@@ -160,43 +159,41 @@ const RCLearningScreen = () => {
 
   // ── Data ──────────────────────────────────────────────────────────────────
   const loadProgress = async () => {
-    try {
-      // TODO: Uncomment when AsyncStorage is installed
-      // const [progressRaw, bookmarksRaw] = await Promise.all([
-      //   AsyncStorage.getItem(STORAGE_KEYS.PROGRESS),
-      //   AsyncStorage.getItem(STORAGE_KEYS.BOOKMARKS),
-      // ]);
-      // if (progressRaw) {
-      //   const data = JSON.parse(progressRaw);
-      //   setCompletedSteps(new Set(data.completed || []));
-      //   setWatchedVideo(data.watchedVideo || false);
-      // }
-      // if (bookmarksRaw) {
-      //   const list = JSON.parse(bookmarksRaw);
-      //   setIsBookmarked(list.includes("rc_mastery_guide"));
-      // }
-    } catch (error) {
-      console.error("[RCLearningScreen] loadProgress error:", error);
-    } finally {
-      setIsLoading(false);
+  try {
+    const [progressRaw, bookmarksRaw] = await Promise.all([
+      AsyncStorage.getItem(STORAGE_KEYS.PROGRESS),
+      AsyncStorage.getItem(STORAGE_KEYS.BOOKMARKS),
+    ]);
+    if (progressRaw) {
+      const data = JSON.parse(progressRaw);
+      setCompletedSteps(new Set(data.completed || []));
+      setWatchedVideo(data.watchedVideo || false);
     }
-  };
+    if (bookmarksRaw) {
+      const list = JSON.parse(bookmarksRaw);
+      setIsBookmarked(list.includes("rc_mastery_guide"));
+    }
+  } catch (error) {
+    console.error("[RCLearningScreen] loadProgress error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const saveProgress = async (newCompleted, newWatchedVideo) => {
-    try {
-      // TODO: Uncomment when AsyncStorage is installed
-      // await AsyncStorage.setItem(
-      //   STORAGE_KEYS.PROGRESS,
-      //   JSON.stringify({
-      //     completed: [...newCompleted],
-      //     watchedVideo: newWatchedVideo,
-      //     lastUpdated: new Date().toISOString(),
-      //   })
-      // );
-    } catch (error) {
-      console.error("[RCLearningScreen] saveProgress error:", error);
-    }
-  };
+  try {
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.PROGRESS,
+      JSON.stringify({
+        completed: [...newCompleted],
+        watchedVideo: newWatchedVideo,
+        lastUpdated: new Date().toISOString(),
+      })
+    );
+  } catch (error) {
+    console.error("[RCLearningScreen] saveProgress error:", error);
+  }
+};
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleBack = useCallback(() => {

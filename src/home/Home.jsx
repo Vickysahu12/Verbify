@@ -46,7 +46,7 @@ const C = {
 const PRACTICE_ITEMS = [
   {
     id: 'vocab',
-    icon: '🔤', title: 'Vocabulary',
+    icon: '🔤', title: 'Vocab',
     getSubtitle: s => `${s.vocab.done} / ${s.vocab.total} words`,
     screen: 'PracticeMain',
     accent: C.purple, bg: C.purpleSoft,

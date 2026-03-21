@@ -1,23 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  Dimensions,
-  RefreshControl,
-  ActivityIndicator,
-  Platform,
-  Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  SafeAreaView, Dimensions, RefreshControl,
+  ActivityIndicator, Platform, Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Backbutton from "../../assets/icon/backbutton.png"
-import Icon from "react-native-vector-icons/Ionicons";
-
+import Backbutton from "../../assets/icon/backbutton.png";
+import axios from 'axios';
+import { AuthService } from '../../services/AuthService';
+import { useFocusEffect } from '@react-navigation/native';
 const { width } = Dimensions.get("window");
 const scale = (s) => (width / 375) * s;
+
+const api = axios.create({
+  baseURL: 'http://10.182.41.220:8000',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
+});
 
 const DUMMY_WORD = {
   word: "Ephemeral",
@@ -30,89 +29,75 @@ const DUMMY_WORD = {
 
 const PracticeScreen = () => {
   const navigation = useNavigation();
-  
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [userName, setUserName] = useState("Alex");
-  
-  const [goalData, setGoalData] = useState({
-    completed: 0,
-    total: 20,
-    streak: 0,
-  });
-
+  const [userName, setUserName] = useState("");
+  const [goalData, setGoalData] = useState({ completed: 0, total: 20, streak: 0 });
   const [modules, setModules] = useState([]);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     loadData();
-  }, []);
+  }, [])
+);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Set goal data
-      setGoalData({
-        completed: 7,
-        total: 20,
-        streak: 5,
-      });
+      const token = await AuthService.getToken();
 
-      // Set modules
-      setModules([
-        {
-          id: 'vocab',
-          title: 'VOCAB',
-          description: 'Master 500+ high-frequency CAT words and context usage.',
-          progress: 45,
-          tag: 'HIGH PRIORITY',
-          tagStyle: 'highPriority',
-          buttons: [
-            { label: 'Learn', screen: 'VocabLearning' },
-            { label: 'Practice', screen: 'Vocab', params: { wordData: DUMMY_WORD } }
-          ]
-        },
-        {
-          id: 'rc',
-          title: 'RC',
-          description: '3 passages remaining for today\'s streak. Focus: Philosophy & Arts.',
-          progress: 12,
-          tag: 'NEW CONTENT',
-          tagStyle: 'newContent',
-          buttons: [
-            { label: 'Learn', screen: 'RcRead' },
-            { label: 'Practice', screen: 'RC' }
-          ]
-        },
-        {
-          id: 'essay',
-          title: 'ESSAY / ARTICLE',
-          description: 'Daily editorial analysis from The Guardian and AEON.',
-          progress: 80,
-          tag: null,
-          buttons: [
-            { label: 'Read', screen: 'Article' },
-            { label: 'Analyse', screen: 'ArticleDetail' }
-          ]
-        },
-        {
-          id: 'va',
-          title: 'VERBAL ABILITY',
-          description: 'Parajumbles, Odd One Out, and Critical Reasoning drills.',
-          progress: 30,
-          tag: null,
-          buttons: [
-            { label: 'Concepts', screen: 'VaConcept' },
-            { label: 'Practice', screen: 'VA' }
-          ]
-        },
+      const [practiceRes, homeRes] = await Promise.all([
+        api.get('/user/practice-modules', { headers: { Authorization: `Bearer ${token}` } }),
+        api.get('/user/home-stats',        { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
+      setUserName(homeRes.data.name);
+
+      const d = practiceRes.data;
+      setGoalData({
+        completed: d.goal_completed,
+        total:     d.goal_total,
+        streak:    d.streak,
+      });
+
+      const moduleButtons = {
+        vocab: [
+          { label: 'Learn',    screen: 'VocabLearning' },
+          { label: 'Practice', screen: 'Vocab', params: { wordData: DUMMY_WORD } }
+        ],
+        rc: [
+          { label: 'Learn',    screen: 'RcRead' },
+          { label: 'Practice', screen: 'RC' }
+        ],
+        essay: [
+          { label: 'Read',    screen: 'Article' },
+          { label: 'Analyse', screen: 'ArticleDetail' }
+        ],
+        va: [
+          { label: 'Concepts', screen: 'VaConcept' },
+          { label: 'Practice', screen: 'VA' }
+        ],
+      };
+
+      const tagStyles = {
+        'HIGH PRIORITY': 'highPriority',
+        'NEW CONTENT':   'newContent',
+      };
+
+      setModules(d.modules.map(m => ({
+        id:          m.id,
+        title:       m.title,
+        description: m.description,
+        progress:    m.progress,
+        tag:         m.tag,
+        tagStyle:    m.tag ? tagStyles[m.tag] : null,
+        buttons:     moduleButtons[m.id] ?? [],
+      })));
+
     } catch (error) {
-      console.log('Error loading data:', error);
+      console.log('Error loading practice data:', error);
+      setGoalData({ completed: 0, total: 20, streak: 0 });
+      setModules([]);
     } finally {
       setIsLoading(false);
     }
@@ -135,8 +120,8 @@ const PracticeScreen = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
         refreshControl={
           <RefreshControl
@@ -149,22 +134,16 @@ const PracticeScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Image
-            source={Backbutton}
-            style={styles.backIcon}
-            resizeMode="contain"
-          />
+            <Image source={Backbutton} style={styles.backIcon} resizeMode="contain" />
           </TouchableOpacity>
-          
           <Text style={styles.headerTitle}>
             Ready to Ace the CAT, {userName}?
           </Text>
-          
           <View style={{ width: 40 }} />
         </View>
 
@@ -172,23 +151,13 @@ const PracticeScreen = () => {
         <View style={styles.goalCard}>
           <View style={styles.goalTop}>
             <Text style={styles.goalTitle}>Daily Goal Tracker</Text>
-            <Text style={styles.goalCount}>
-              {goalData.completed}/{goalData.total}
-            </Text>
+            <Text style={styles.goalCount}>{goalData.completed}/{goalData.total}</Text>
           </View>
-
           <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${(goalData.completed / goalData.total) * 100}%` }
-              ]} 
-            />
+            <View style={[styles.progressFill, { width: `${(goalData.completed / goalData.total) * 100}%` }]} />
           </View>
-
           <Text style={styles.goalSub}>
-            {goalData.completed}/{goalData.total} Questions solved today. 
-            You're on a {goalData.streak}-day streak! 🔥
+            {goalData.completed}/{goalData.total} Questions solved today. You're on a {goalData.streak}-day streak! 🔥
           </Text>
         </View>
 
@@ -197,20 +166,14 @@ const PracticeScreen = () => {
 
         {/* Module Cards */}
         {modules.map((module) => (
-          <ModuleCard 
-            key={module.id}
-            module={module}
-            navigation={navigation}
-          />
+          <ModuleCard key={module.id} module={module} navigation={navigation} />
         ))}
 
         {modules.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>📚</Text>
             <Text style={styles.emptyText}>No modules available</Text>
-            <Text style={styles.emptySubtext}>
-              Check back later for new content!
-            </Text>
+            <Text style={styles.emptySubtext}>Check back later for new content!</Text>
           </View>
         )}
       </ScrollView>
@@ -218,52 +181,28 @@ const PracticeScreen = () => {
   );
 };
 
-/* MODULE CARD COMPONENT */
 const ModuleCard = ({ module, navigation }) => (
   <View style={styles.card}>
     {module.tag && (
-      <Text style={[styles.tag, styles[module.tagStyle]]}>
-        {module.tag}
-      </Text>
+      <Text style={[styles.tag, styles[module.tagStyle]]}>{module.tag}</Text>
     )}
-
     <Text style={styles.cardTitle}>{module.title}</Text>
     <Text style={styles.cardDesc}>{module.description}</Text>
-
     <View style={styles.cardBottom}>
       <View style={styles.cardProgress}>
-        <View 
-          style={[
-            styles.cardProgressFill, 
-            { width: `${module.progress}%` }
-          ]} 
-        />
+        <View style={[styles.cardProgressFill, { width: `${module.progress}%` }]} />
       </View>
       <Text style={styles.percent}>{module.progress}%</Text>
     </View>
-
     <View style={styles.dualCTA}>
       {module.buttons.map((button, index) => (
         <TouchableOpacity
           key={index}
-          style={[
-            styles.ctaSmall,
-            index === 0 ? styles.ctaPrimary : styles.ctaSecondary
-          ]}
-          onPress={() => {
-            if (button.params) {
-              navigation.navigate(button.screen, button.params);
-            } else {
-              navigation.navigate(button.screen);
-            }
-          }}
+          style={[styles.ctaSmall, index === 0 ? styles.ctaPrimary : styles.ctaSecondary]}
+          onPress={() => button.params ? navigation.navigate(button.screen, button.params) : navigation.navigate(button.screen)}
           activeOpacity={0.8}
         >
-          <Text 
-            style={
-              index === 0 ? styles.ctaPrimaryText : styles.ctaSecondaryText
-            }
-          >
+          <Text style={index === 0 ? styles.ctaPrimaryText : styles.ctaSecondaryText}>
             {button.label}
           </Text>
         </TouchableOpacity>
@@ -275,257 +214,48 @@ const ModuleCard = ({ module, navigation }) => (
 export default PracticeScreen;
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#F9FAF6",
-    paddingHorizontal: scale(16),
-  },
-  
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#6B7280',
-  },
-
+  safe: { flex: 1, backgroundColor: "#F9FAF6", paddingHorizontal: scale(16) },
+  centerContent: { justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
   header: {
-    backgroundColor: "#F9FAF6",
-    paddingVertical: scale(14),
-    paddingHorizontal: scale(4),
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: "#F9FAF6", paddingVertical: scale(14),
+    paddingHorizontal: scale(4), flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'space-between',
     paddingTop: Platform.OS === 'ios' ? scale(10) : scale(30),
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  backIcon: {
-    width: 22,
-    height: 22,
-  },
-
-  headerTitle: {
-    flex: 1,
-    fontSize: scale(16),
-    fontWeight: "700",
-    color: "#1F3B1F",
-    textAlign: 'center',
-  },
-
+  backButton: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
+  backIcon: { width: 22, height: 22 },
+  headerTitle: { flex: 1, fontSize: scale(16), fontWeight: "700", color: "#1F3B1F", textAlign: 'center' },
   goalCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: scale(14),
-    padding: scale(16),
-    marginBottom: scale(20),
-    marginTop: 5,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    backgroundColor: "#FFFFFF", borderRadius: scale(14),
+    padding: scale(16), marginBottom: scale(20), marginTop: 5,
+    elevation: 3,
   },
-
-  goalTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: scale(8),
-  },
-
-  goalTitle: {
-    fontSize: scale(14),
-    fontWeight: "600",
-    color: "#1F3B1F",
-  },
-
-  goalCount: {
-    fontSize: scale(14),
-    fontWeight: "700",
-    color: "#1F3B1F",
-  },
-
-  goalSub: {
-    fontSize: scale(12),
-    color: "#6B7280",
-    marginTop: scale(8),
-  },
-
-  progressBar: {
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 6,
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#1F3B1F",
-  },
-
-  sectionTitle: {
-    fontSize: scale(16),
-    fontWeight: "700",
-    color: "#1F3B1F",
-    marginBottom: scale(12),
-  },
-
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: scale(16),
-    padding: scale(16),
-    marginBottom: scale(20),
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-
-  tag: {
-    alignSelf: "flex-start",
-    fontSize: scale(10),
-    fontWeight: "700",
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(3),
-    borderRadius: 20,
-    marginBottom: scale(10),
-  },
-
-  highPriority: {
-    backgroundColor: "#FEF3C7",
-    color: "#92400E",
-  },
-
-  newContent: {
-    backgroundColor: "#DCFCE7",
-    color: "#166534",
-  },
-
-  cardTitle: {
-    fontSize: scale(16),
-    fontWeight: "700",
-    color: "#0F172A",
-    marginBottom: scale(6),
-  },
-
-  cardDesc: {
-    fontSize: scale(13),
-    color: "#4B5563",
-    marginBottom: scale(14),
-    lineHeight: scale(18),
-  },
-
-  cardBottom: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: scale(14),
-  },
-
-  cardProgress: {
-    flex: 1,
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 6,
-    overflow: "hidden",
-  },
-
-  cardProgressFill: {
-    height: "100%",
-    backgroundColor: "#1F3B1F",
-  },
-
-  percent: {
-    marginLeft: scale(8),
-    fontSize: scale(12),
-    fontWeight: "600",
-    color: "#1F3B1F",
-  },
-
-  dualCTA: {
-    flexDirection: "row",
-    gap: scale(12),
-  },
-
-  ctaSmall: {
-    flex: 1,
-    paddingVertical: scale(12),
-    borderRadius: scale(10),
-    alignItems: "center",
-  },
-
-  ctaPrimary: {
-    backgroundColor: "#1F3B1F",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#1F3B1F",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-
-  ctaSecondary: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: "#1F3B1F",
-  },
-
-  ctaPrimaryText: {
-    color: "#FFFFFF",
-    fontSize: scale(14),
-    fontWeight: "700",
-  },
-
-  ctaSecondaryText: {
-    color: "#1F3B1F",
-    fontSize: scale(14),
-    fontWeight: "700",
-  },
-
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  
-  emptySubtext: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
+  goalTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) },
+  goalTitle: { fontSize: scale(14), fontWeight: "600", color: "#1F3B1F" },
+  goalCount: { fontSize: scale(14), fontWeight: "700", color: "#1F3B1F" },
+  goalSub: { fontSize: scale(12), color: "#6B7280", marginTop: scale(8) },
+  progressBar: { height: 6, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
+  progressFill: { height: "100%", backgroundColor: "#1F3B1F" },
+  sectionTitle: { fontSize: scale(16), fontWeight: "700", color: "#1F3B1F", marginBottom: scale(12) },
+  card: { backgroundColor: "#FFFFFF", borderRadius: scale(16), padding: scale(16), marginBottom: scale(20), elevation: 4 },
+  tag: { alignSelf: "flex-start", fontSize: scale(10), fontWeight: "700", paddingHorizontal: scale(10), paddingVertical: scale(3), borderRadius: 20, marginBottom: scale(10) },
+  highPriority: { backgroundColor: "#FEF3C7", color: "#92400E" },
+  newContent: { backgroundColor: "#DCFCE7", color: "#166534" },
+  cardTitle: { fontSize: scale(16), fontWeight: "700", color: "#0F172A", marginBottom: scale(6) },
+  cardDesc: { fontSize: scale(13), color: "#4B5563", marginBottom: scale(14), lineHeight: scale(18) },
+  cardBottom: { flexDirection: "row", alignItems: "center", marginBottom: scale(14) },
+  cardProgress: { flex: 1, height: 6, backgroundColor: "#E5E7EB", borderRadius: 6, overflow: "hidden" },
+  cardProgressFill: { height: "100%", backgroundColor: "#1F3B1F" },
+  percent: { marginLeft: scale(8), fontSize: scale(12), fontWeight: "600", color: "#1F3B1F" },
+  dualCTA: { flexDirection: "row", gap: scale(12) },
+  ctaSmall: { flex: 1, paddingVertical: scale(12), borderRadius: scale(10), alignItems: "center" },
+  ctaPrimary: { backgroundColor: "#1F3B1F", elevation: 3 },
+  ctaSecondary: { backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#1F3B1F" },
+  ctaPrimaryText: { color: "#FFFFFF", fontSize: scale(14), fontWeight: "700" },
+  ctaSecondaryText: { color: "#1F3B1F", fontSize: scale(14), fontWeight: "700" },
+  emptyState: { alignItems: 'center', paddingVertical: 60 },
+  emptyIcon: { fontSize: 64, marginBottom: 16 },
+  emptyText: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  emptySubtext: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
 });
