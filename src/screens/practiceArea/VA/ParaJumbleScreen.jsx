@@ -1,88 +1,39 @@
 /**
- * ParaJumbleScreen.jsx
- * ─────────────────────────────────────────────────────────────────────────────
- * IMPROVEMENTS:
- * - sc() responsive scaling added — works on all screen sizes
- * - SafeAreaView replaces hardcoded paddingTop: 52
- * - Navbar title absolutely centered (same fix as VAHubScreen)
- * - Tighter, more consistent spacing throughout
- * - Cleaner card elevations & border radius unified
- * ─────────────────────────────────────────────────────────────────────────────
- * BACKEND: swap LEARN_CARDS + QUESTIONS imports with API data when ready
+ * ParaJumbleScreen.jsx — Learn Only
+ * Sirf strategies + examples — koi practice questions nahi
+ * Last card pe "Start Practice" button → ParaJumblePractice screen
  */
 
 import React, { useState, useRef } from 'react';
-import { PJ_LEARN_CARDS as LEARN_CARDS, PJ_QUESTIONS as QUESTIONS } from './dataa/ParaContent';
+import { PJ_LEARN_CARDS as LEARN_CARDS } from './dataa/ParaContent';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Animated, Dimensions, StatusBar, Platform,
+  Animated, Dimensions, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SW } = Dimensions.get('window');
 const sc = n => (SW / 390) * n;
 
-// ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
-  accent:      '#1a3c8f',
-  accentLight: '#EEF2FF',
-  accentMid:   '#3B5FDB',
-  bg:          '#F7F8FC',
-  surface:     '#FFFFFF',
-  border:      '#E8EBF4',
-  borderLight: '#F0F2FA',
-  text:        '#111827',
-  sub:         '#374151',
-  muted:       '#6B7594',
-  correct:     '#16a34a',
-  correctBg:   '#F0FDF4',
-  correctBdr:  '#BBF7D0',
-  wrong:       '#dc2626',
-  wrongBg:     '#FEF2F2',
-  wrongBdr:    '#FECACA',
-  shadow:      '#1a3c8f',
+  accent: '#1a3c8f', accentLight: '#EEF2FF', accentMid: '#3B5FDB',
+  bg: '#F7F8FC', surface: '#FFFFFF', border: '#E8EBF4', borderLight: '#F0F2FA',
+  text: '#111827', sub: '#374151', muted: '#6B7594',
+  correct: '#16a34a',
 };
 
-// ─── DYNAMIC INIT ─────────────────────────────────────────────────────────────
-const initAnswers    = Object.fromEntries(QUESTIONS.map(q => [q.id, null]));
-const initChecked    = Object.fromEntries(QUESTIONS.map(q => [q.id, false]));
-const initShakeAnims = Object.fromEntries(QUESTIONS.map(q => [q.id, new Animated.Value(0)]));
-
-// ─── SCREEN ───────────────────────────────────────────────────────────────────
 export default function ParaJumbleScreen({ navigation }) {
   const [activeLearnTab, setActiveLearnTab] = useState(0);
-  const [answers, setAnswers] = useState(initAnswers);
-  const [checked, setChecked] = useState(initChecked);
-  const scrollRef  = useRef(null);
-  const shakeAnims = useRef(initShakeAnims).current;
-  const backScale  = useRef(new Animated.Value(1)).current;
+  const scrollRef = useRef(null);
+  const backScale = useRef(new Animated.Value(1)).current;
 
-  const currentCard = LEARN_CARDS[activeLearnTab];
+  const currentCard   = LEARN_CARDS[activeLearnTab];
+  const totalProgress = Math.round(((activeLearnTab + 1) / LEARN_CARDS.length) * 100);
+  const isLastCard    = activeLearnTab === LEARN_CARDS.length - 1;
 
   const goToLearnTab = i => {
     setActiveLearnTab(i);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
-  };
-
-  const handleSelect = (qId, optId) => {
-    if (checked[qId]) return;
-    setAnswers(prev => ({ ...prev, [qId]: optId }));
-  };
-
-  const handleCheck = qId => {
-    if (!answers[qId]) return;
-    const q = QUESTIONS.find(q => q.id === qId);
-    const isCorrect = answers[qId] === q.explanation.correct;
-    setChecked(prev => ({ ...prev, [qId]: true }));
-    if (!isCorrect) {
-      Animated.sequence([
-        Animated.timing(shakeAnims[qId], { toValue: 8,  duration: 55, useNativeDriver: true }),
-        Animated.timing(shakeAnims[qId], { toValue: -8, duration: 55, useNativeDriver: true }),
-        Animated.timing(shakeAnims[qId], { toValue: 6,  duration: 55, useNativeDriver: true }),
-        Animated.timing(shakeAnims[qId], { toValue: -6, duration: 55, useNativeDriver: true }),
-        Animated.timing(shakeAnims[qId], { toValue: 0,  duration: 55, useNativeDriver: true }),
-      ]).start();
-    }
   };
 
   const handleBack = () => {
@@ -92,64 +43,33 @@ export default function ParaJumbleScreen({ navigation }) {
     ]).start(() => navigation?.goBack());
   };
 
-  const getOptionStyle = (qId, optId) => {
-    const isCheckedQ = checked[qId];
-    const isSelected = answers[qId] === optId;
-    const correctId  = QUESTIONS.find(q => q.id === qId).explanation.correct;
-    if (!isCheckedQ) return isSelected ? [s.option, s.optionSelected] : [s.option];
-    if (optId === correctId) return [s.option, s.optionCorrect];
-    if (isSelected)          return [s.option, s.optionWrong];
-    return [s.option, s.optionDim];
-  };
-
-  const getLetterBg = (qId, optId) => {
-    const isCheckedQ = checked[qId];
-    const isSelected = answers[qId] === optId;
-    const correctId  = QUESTIONS.find(q => q.id === qId).explanation.correct;
-    if (!isCheckedQ) return isSelected ? C.accent : '#C9D0E8';
-    if (optId === correctId) return C.correct;
-    if (isSelected)          return C.wrong;
-    return '#C9D0E8';
-  };
-
-  const totalProgress = Math.round(((activeLearnTab + 1) / LEARN_CARDS.length) * 100);
-
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
-      {/* ── NAVBAR ── */}
       <View style={s.navbar}>
         <Animated.View style={{ transform: [{ scale: backScale }], zIndex: 1 }}>
-          <TouchableOpacity
-            onPress={handleBack} style={s.navBtn}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
+          <TouchableOpacity onPress={handleBack} style={s.navBtn}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Text style={s.navBackIcon}>‹</Text>
           </TouchableOpacity>
         </Animated.View>
-
         <View style={s.navCenter} pointerEvents="none">
-          <Text style={s.navTitle}>Para Jumble</Text>
+          <Text style={s.navTitle}>Para Jumble — Learn</Text>
           <Text style={s.navSub}>VERBAL ABILITY PREP</Text>
         </View>
-
-        <View style={s.navInfoBtn}>
-          <Text style={s.navInfoText}>ⓘ</Text>
-        </View>
+        <View style={s.navInfoBtn}><Text style={s.navInfoText}>ⓘ</Text></View>
       </View>
 
-      {/* ── PROGRESS BAR ── */}
       <View style={s.progressTrack}>
         <View style={[s.progressFill, { width: `${totalProgress}%` }]} />
       </View>
 
-      {/* ── STATS STRIP ── */}
       <View style={s.statsStrip}>
         {[
-          { val: LEARN_CARDS.length, label: 'Strategies' },
-          { val: QUESTIONS.length,   label: 'Exercises'  },
-          { val: '~6 min',           label: 'Est. Time'  },
+          { val: LEARN_CARDS.length,                        label: 'Strategies' },
+          { val: `${activeLearnTab + 1}/${LEARN_CARDS.length}`, label: 'Current'    },
+          { val: `${totalProgress}%`,                       label: 'Progress'   },
         ].map((st, i) => (
           <React.Fragment key={i}>
             {i > 0 && <View style={s.statDiv} />}
@@ -161,13 +81,9 @@ export default function ParaJumbleScreen({ navigation }) {
         ))}
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        style={s.scroll}
-        contentContainerStyle={s.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ════ LEARN SECTION ════ */}
+      <ScrollView ref={scrollRef} style={s.scroll} contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}>
+
         <View style={s.sectionHeader}>
           <View style={s.sectionLeft}>
             <View style={s.sectionDot} />
@@ -175,13 +91,10 @@ export default function ParaJumbleScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Tab Pills */}
         <View style={s.tabRow}>
           {LEARN_CARDS.map((card, i) => (
-            <TouchableOpacity
-              key={card.id} onPress={() => goToLearnTab(i)}
-              style={[s.tabPill, activeLearnTab === i && { backgroundColor: card.accentColor }]}
-            >
+            <TouchableOpacity key={card.id} onPress={() => goToLearnTab(i)}
+              style={[s.tabPill, activeLearnTab === i && { backgroundColor: card.accentColor }]}>
               <Text style={[s.tabPillText, activeLearnTab === i && { color: '#fff' }]}>
                 {card.icon}  S0{card.id}
               </Text>
@@ -189,12 +102,10 @@ export default function ParaJumbleScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Badge */}
         <View style={[s.badge, { backgroundColor: currentCard.bgColor }]}>
           <Text style={[s.badgeText, { color: currentCard.accentColor }]}>{currentCard.badge}</Text>
         </View>
 
-        {/* Hero Card */}
         <View style={[s.heroCard, { borderLeftColor: currentCard.accentColor }]}>
           <View style={s.heroTopRow}>
             <Text style={s.heroIcon}>{currentCard.icon}</Text>
@@ -203,7 +114,6 @@ export default function ParaJumbleScreen({ navigation }) {
           <Text style={s.heroDesc}>{currentCard.description}</Text>
         </View>
 
-        {/* Steps */}
         <Text style={s.subHeading}>Step-by-Step Approach</Text>
         {currentCard.steps.map((step, i) => (
           <View key={i} style={s.stepRow}>
@@ -214,13 +124,11 @@ export default function ParaJumbleScreen({ navigation }) {
           </View>
         ))}
 
-        {/* Tip */}
         <View style={[s.tipCard, { backgroundColor: currentCard.bgColor, borderColor: currentCard.accentColor }]}>
           <Text style={s.tipIcon}>💡</Text>
           <Text style={[s.tipText, { color: currentCard.accentColor }]}>{currentCard.tip}</Text>
         </View>
 
-        {/* Example */}
         <Text style={s.subHeading}>See It In Action</Text>
         {currentCard.example.sentences.map((sent, i) => (
           <View key={i} style={[s.exRow, sent.role && { borderColor: currentCard.accentColor, borderWidth: sc(2) }]}>
@@ -241,157 +149,39 @@ export default function ParaJumbleScreen({ navigation }) {
           </View>
         ))}
 
-        {/* Explanation */}
         <View style={[s.explanationBox, { borderLeftColor: currentCard.accentColor }]}>
           <Text style={s.explanationIcon}>📌</Text>
           <Text style={s.explanationText}>{currentCard.example.explanation}</Text>
         </View>
 
-        {/* Learn Nav */}
+        {/* Nav buttons */}
         <View style={s.learnNavRow}>
           {activeLearnTab > 0 && (
-            <TouchableOpacity
-              style={[s.learnNavOutline, { borderColor: currentCard.accentColor }]}
-              onPress={() => goToLearnTab(activeLearnTab - 1)}
-            >
+            <TouchableOpacity style={[s.learnNavOutline, { borderColor: currentCard.accentColor }]}
+              onPress={() => goToLearnTab(activeLearnTab - 1)}>
               <Text style={[s.learnNavOutlineText, { color: currentCard.accentColor }]}>← Prev</Text>
             </TouchableOpacity>
           )}
-          {activeLearnTab < LEARN_CARDS.length - 1 && (
-            <TouchableOpacity
-              style={[s.learnNavFill, { backgroundColor: currentCard.accentColor }]}
-              onPress={() => goToLearnTab(activeLearnTab + 1)}
-            >
+          {!isLastCard ? (
+            <TouchableOpacity style={[s.learnNavFill, { backgroundColor: currentCard.accentColor }]}
+              onPress={() => goToLearnTab(activeLearnTab + 1)}>
               <Text style={s.learnNavFillText}>Next Strategy →</Text>
+            </TouchableOpacity>
+          ) : (
+            /* Last card pe Practice button */
+            <TouchableOpacity style={[s.learnNavFill, { backgroundColor: C.correct }]}
+              onPress={() => navigation.navigate('ParaJumblePractice')}>
+              <Text style={s.learnNavFillText}>Start Practice ✏️</Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Dots */}
         <View style={s.dotsRow}>
           {LEARN_CARDS.map((_, i) => (
-            <View
-              key={i}
-              style={[s.dot, activeLearnTab === i && { backgroundColor: currentCard.accentColor, width: sc(22) }]}
-            />
+            <View key={i} style={[s.dot,
+              activeLearnTab === i && { backgroundColor: currentCard.accentColor, width: sc(22) }]} />
           ))}
         </View>
-
-        {/* ════ PRACTICE SECTION ════ */}
-        <View style={[s.sectionHeader, { marginTop: sc(28) }]}>
-          <View style={s.sectionLeft}>
-            <View style={[s.sectionDot, { backgroundColor: C.correct }]} />
-            <Text style={s.sectionTitle}>PRACTICE QUESTIONS</Text>
-          </View>
-          <Text style={s.sectionSub}>Apply the strategies</Text>
-        </View>
-
-        {QUESTIONS.map(q => {
-          const isCheckedQ = checked[q.id];
-          const isCorrect  = answers[q.id] === q.explanation.correct;
-
-          return (
-            <View key={q.id} style={s.questionBlock}>
-              {/* Strategy hint */}
-              <View style={s.strategyBanner}>
-                <Text style={s.strategyIcon}>{q.strategy.icon}</Text>
-                <Text style={s.strategyLabel}>{q.strategy.label}</Text>
-              </View>
-
-              {/* Meta */}
-              <View style={s.qMeta}>
-                <View style={s.exerciseBadge}>
-                  <Text style={s.exerciseBadgeText}>{q.exerciseNo}</Text>
-                </View>
-                <Text style={s.qCounter}>{q.id} of {q.total}</Text>
-              </View>
-
-              <Text style={s.qTitle}>Para Jumble</Text>
-              <Text style={s.qInstruction}>{q.instruction}</Text>
-
-              {/* Context box */}
-              {q.context && (
-                <View style={s.contextBox}>
-                  <Text style={s.contextLabel}>CONTEXT</Text>
-                  <Text style={s.contextText}>{q.context}</Text>
-                </View>
-              )}
-
-              {/* Sentence reference */}
-              {q.sentences && (
-                <View style={s.sentenceRefBox}>
-                  {q.sentences.map(sent => (
-                    <View key={sent.label} style={s.sentenceRefRow}>
-                      <View style={s.sentenceRefLabel}>
-                        <Text style={s.sentenceRefLabelText}>{sent.label}</Text>
-                      </View>
-                      <Text style={s.sentenceRefText}>{sent.text}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {/* Options */}
-              <Animated.View style={{ transform: [{ translateX: shakeAnims[q.id] }] }}>
-                {q.options.map(opt => (
-                  <TouchableOpacity
-                    key={opt.id}
-                    activeOpacity={isCheckedQ ? 1 : 0.75}
-                    onPress={() => handleSelect(q.id, opt.id)}
-                    style={getOptionStyle(q.id, opt.id)}
-                  >
-                    <View style={[s.optLetter, { backgroundColor: getLetterBg(q.id, opt.id) }]}>
-                      <Text style={s.optLetterText}>{opt.id}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      {opt.highlight ? (
-                        <Text style={s.optText}>
-                          <Text style={s.highlight}>{opt.highlight}</Text>
-                          {opt.text.replace(opt.highlight, '')}
-                        </Text>
-                      ) : (
-                        <Text style={s.optText}>{opt.text}</Text>
-                      )}
-                      {isCheckedQ && opt.id === answers[q.id] && !isCorrect && opt.reason && (
-                        <Text style={s.reasonText}>↳ {opt.reason}</Text>
-                      )}
-                      {isCheckedQ && opt.id === q.explanation.correct && (
-                        <View style={s.correctTag}><Text style={s.correctTagText}>✓ Correct</Text></View>
-                      )}
-                      {isCheckedQ && opt.id === answers[q.id] && !isCorrect && (
-                        <View style={s.wrongTag}><Text style={s.wrongTagText}>✗ Incorrect</Text></View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </Animated.View>
-
-              {/* Feedback */}
-              {isCheckedQ && (
-                <View style={[s.feedbackBox, isCorrect ? s.feedbackCorrect : s.feedbackWrong]}>
-                  <Text style={s.feedbackEmoji}>{isCorrect ? '🎉' : '😅'}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.feedbackTitle}>
-                      {isCorrect ? 'Spot on! Great logical thinking.' : `Correct answer is ${q.explanation.correct}`}
-                    </Text>
-                    <Text style={s.feedbackBody}>{q.explanation.why}</Text>
-                  </View>
-                </View>
-              )}
-
-              {/* Check Button */}
-              {!isCheckedQ && (
-                <TouchableOpacity
-                  style={[s.checkBtn, !answers[q.id] && s.checkBtnDisabled]}
-                  onPress={() => handleCheck(q.id)}
-                  disabled={!answers[q.id]}
-                >
-                  <Text style={s.checkBtnText}>Check Answer ✓</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          );
-        })}
 
         <View style={{ height: sc(40) }} />
       </ScrollView>
@@ -399,195 +189,62 @@ export default function ParaJumbleScreen({ navigation }) {
   );
 }
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: C.bg },
+  safe: { flex: 1, backgroundColor: C.bg },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: sc(16), paddingTop: sc(18), paddingBottom: sc(20) },
-
-  // ── Navbar ──
-  navbar: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: sc(16),
-    paddingTop: sc(10), paddingBottom: sc(10),
-    backgroundColor: C.bg,
-    borderBottomWidth: 1, borderBottomColor: C.borderLight,
-  },
-  navBtn: {
-    width: sc(36), height: sc(36), borderRadius: sc(11),
-    backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: C.border,
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
-  },
+  navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: sc(16), paddingTop: sc(10), paddingBottom: sc(10), backgroundColor: C.bg, borderBottomWidth: 1, borderBottomColor: C.borderLight },
+  navBtn: { width: sc(36), height: sc(36), borderRadius: sc(11), backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border, elevation: 2 },
   navBackIcon: { fontSize: sc(22), color: C.text, lineHeight: sc(26), marginTop: -sc(1) },
-  navCenter: {
-    position: 'absolute', left: 0, right: 0,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  navCenter: { position: 'absolute', left: 0, right: 0, alignItems: 'center', justifyContent: 'center' },
   navTitle: { fontSize: sc(15), fontWeight: '800', color: C.accent, letterSpacing: -0.2 },
-  navSub:   { fontSize: sc(9),  fontWeight: '700', color: C.muted,  letterSpacing: 1.1, marginTop: sc(1) },
-  navInfoBtn: {
-    width: sc(36), height: sc(36), borderRadius: sc(11),
-    backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center',
-    zIndex: 1,
-  },
+  navSub: { fontSize: sc(9), fontWeight: '700', color: C.muted, letterSpacing: 1.1, marginTop: sc(1) },
+  navInfoBtn: { width: sc(36), height: sc(36), borderRadius: sc(11), backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
   navInfoText: { fontSize: sc(15), color: '#fff', fontWeight: '800' },
-
-  // ── Progress ──
   progressTrack: { height: sc(3), backgroundColor: C.borderLight },
-  progressFill:  { height: sc(3), backgroundColor: C.accentMid, borderRadius: sc(2) },
-
-  // ── Stats Strip ──
-  statsStrip: {
-    flexDirection: 'row', backgroundColor: C.accent,
-    paddingVertical: sc(10), paddingHorizontal: sc(16),
-    alignItems: 'center', justifyContent: 'space-around',
-  },
-  statItem:  { alignItems: 'center' },
-  statVal:   { fontSize: sc(14), fontWeight: '800', color: '#fff' },
+  progressFill: { height: sc(3), backgroundColor: C.accentMid, borderRadius: sc(2) },
+  statsStrip: { flexDirection: 'row', backgroundColor: C.accent, paddingVertical: sc(10), paddingHorizontal: sc(16), alignItems: 'center', justifyContent: 'space-around' },
+  statItem: { alignItems: 'center' },
+  statVal: { fontSize: sc(14), fontWeight: '800', color: '#fff' },
   statLabel: { fontSize: sc(10), fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginTop: sc(1) },
-  statDiv:   { width: 1, height: sc(24), backgroundColor: 'rgba(255,255,255,0.15)' },
-
-  // ── Section Header ──
+  statDiv: { width: 1, height: sc(24), backgroundColor: 'rgba(255,255,255,0.15)' },
   sectionHeader: { marginBottom: sc(12) },
-  sectionLeft:   { flexDirection: 'row', alignItems: 'center', gap: sc(8), marginBottom: sc(3) },
-  sectionDot:    { width: sc(8), height: sc(8), borderRadius: sc(4), backgroundColor: C.accent },
-  sectionTitle:  { fontSize: sc(11), fontWeight: '800', color: C.muted, letterSpacing: 1.4 },
-  sectionSub:    { fontSize: sc(12), fontWeight: '600', color: C.sub, marginLeft: sc(16) },
-
-  // ── Tabs ──
-  tabRow:     { flexDirection: 'row', gap: sc(8), marginBottom: sc(12) },
-  tabPill:    { flex: 1, paddingVertical: sc(9), borderRadius: sc(22), backgroundColor: C.border, alignItems: 'center' },
-  tabPillText:{ fontSize: sc(12), fontWeight: '700', color: C.muted },
-
-  // ── Badge ──
-  badge:     { alignSelf: 'flex-start', paddingHorizontal: sc(12), paddingVertical: sc(5), borderRadius: sc(20), marginBottom: sc(10) },
+  sectionLeft: { flexDirection: 'row', alignItems: 'center', gap: sc(8), marginBottom: sc(3) },
+  sectionDot: { width: sc(8), height: sc(8), borderRadius: sc(4), backgroundColor: C.accent },
+  sectionTitle: { fontSize: sc(11), fontWeight: '800', color: C.muted, letterSpacing: 1.4 },
+  tabRow: { flexDirection: 'row', gap: sc(8), marginBottom: sc(12) },
+  tabPill: { flex: 1, paddingVertical: sc(9), borderRadius: sc(22), backgroundColor: C.border, alignItems: 'center' },
+  tabPillText: { fontSize: sc(12), fontWeight: '700', color: C.muted },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: sc(12), paddingVertical: sc(5), borderRadius: sc(20), marginBottom: sc(10) },
   badgeText: { fontSize: sc(11), fontWeight: '800', letterSpacing: 0.8 },
-
-  // ── Hero Card ──
-  heroCard: {
-    backgroundColor: C.surface, borderRadius: sc(16), padding: sc(16),
-    borderLeftWidth: sc(4), marginBottom: sc(16),
-    shadowColor: C.shadow, shadowOffset: { width: 0, height: sc(4) },
-    shadowOpacity: 0.07, shadowRadius: sc(10), elevation: 3,
-  },
+  heroCard: { backgroundColor: C.surface, borderRadius: sc(16), padding: sc(16), borderLeftWidth: sc(4), marginBottom: sc(16), elevation: 3 },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: sc(8), gap: sc(10) },
-  heroIcon:   { fontSize: sc(24) },
-  heroTitle:  { fontSize: sc(17), fontWeight: '800', letterSpacing: 0.1, flex: 1 },
-  heroDesc:   { fontSize: sc(13), lineHeight: sc(21), color: C.sub },
-
-  // ── Steps ──
+  heroIcon: { fontSize: sc(24) },
+  heroTitle: { fontSize: sc(17), fontWeight: '800', letterSpacing: 0.1, flex: 1 },
+  heroDesc: { fontSize: sc(13), lineHeight: sc(21), color: C.sub },
   subHeading: { fontSize: sc(14), fontWeight: '800', color: C.text, marginBottom: sc(10), marginTop: sc(2) },
-  stepRow:    { flexDirection: 'row', alignItems: 'flex-start', marginBottom: sc(9), gap: sc(11) },
-  stepNum:    { width: sc(26), height: sc(26), borderRadius: sc(13), alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: sc(1) },
-  stepNumText:{ fontSize: sc(12), fontWeight: '800', color: '#fff' },
-  stepText:   { flex: 1, fontSize: sc(13), lineHeight: sc(20), color: C.sub },
-
-  // ── Tip ──
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: sc(9), gap: sc(11) },
+  stepNum: { width: sc(26), height: sc(26), borderRadius: sc(13), alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: sc(1) },
+  stepNumText: { fontSize: sc(12), fontWeight: '800', color: '#fff' },
+  stepText: { flex: 1, fontSize: sc(13), lineHeight: sc(20), color: C.sub },
   tipCard: { flexDirection: 'row', gap: sc(8), borderRadius: sc(12), padding: sc(13), borderWidth: 1.5, marginBottom: sc(18), marginTop: sc(4), alignItems: 'flex-start' },
   tipIcon: { fontSize: sc(14), marginTop: sc(1) },
   tipText: { flex: 1, fontSize: sc(13), lineHeight: sc(20), fontWeight: '500' },
-
-  // ── Example rows ──
-  exRow: {
-    flexDirection: 'row', backgroundColor: C.surface, borderRadius: sc(12),
-    padding: sc(12), marginBottom: sc(7), gap: sc(10),
-    borderWidth: 1, borderColor: C.border,
-  },
-  exLetter:     { width: sc(26), height: sc(26), borderRadius: sc(7), alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  exRow: { flexDirection: 'row', backgroundColor: C.surface, borderRadius: sc(12), padding: sc(12), marginBottom: sc(7), gap: sc(10), borderWidth: 1, borderColor: C.border },
+  exLetter: { width: sc(26), height: sc(26), borderRadius: sc(7), alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   exLetterText: { fontSize: sc(12), fontWeight: '800', color: '#fff' },
-  exText:       { fontSize: sc(13), lineHeight: sc(20), color: C.sub, marginBottom: sc(4) },
-  roleBadge:    { borderRadius: sc(5), paddingHorizontal: sc(7), paddingVertical: sc(2), alignSelf: 'flex-start', marginBottom: sc(3) },
-  roleBadgeText:{ fontSize: sc(10), fontWeight: '800' },
-  exNote:       { fontSize: sc(11), color: C.muted, lineHeight: sc(16), fontStyle: 'italic' },
-
-  // ── Explanation ──
-  explanationBox: {
-    flexDirection: 'row', backgroundColor: C.surface, borderRadius: sc(12),
-    padding: sc(13), marginBottom: sc(18), borderLeftWidth: sc(3),
-    gap: sc(8), alignItems: 'flex-start',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, elevation: 1,
-  },
+  exText: { fontSize: sc(13), lineHeight: sc(20), color: C.sub, marginBottom: sc(4) },
+  roleBadge: { borderRadius: sc(5), paddingHorizontal: sc(7), paddingVertical: sc(2), alignSelf: 'flex-start', marginBottom: sc(3) },
+  roleBadgeText: { fontSize: sc(10), fontWeight: '800' },
+  exNote: { fontSize: sc(11), color: C.muted, lineHeight: sc(16), fontStyle: 'italic' },
+  explanationBox: { flexDirection: 'row', backgroundColor: C.surface, borderRadius: sc(12), padding: sc(13), marginBottom: sc(18), borderLeftWidth: sc(3), gap: sc(8), alignItems: 'flex-start', elevation: 1 },
   explanationIcon: { fontSize: sc(14), marginTop: sc(1) },
   explanationText: { flex: 1, fontSize: sc(13), lineHeight: sc(20), color: C.sub, fontStyle: 'italic' },
-
-  // ── Learn Nav ──
-  learnNavRow:      { flexDirection: 'row', gap: sc(10), marginBottom: sc(12) },
-  learnNavOutline:  { flex: 1, height: sc(48), borderRadius: sc(13), alignItems: 'center', justifyContent: 'center', borderWidth: sc(2), backgroundColor: 'transparent' },
+  learnNavRow: { flexDirection: 'row', gap: sc(10), marginBottom: sc(12) },
+  learnNavOutline: { flex: 1, height: sc(48), borderRadius: sc(13), alignItems: 'center', justifyContent: 'center', borderWidth: sc(2), backgroundColor: 'transparent' },
   learnNavOutlineText: { fontSize: sc(14), fontWeight: '700' },
-  learnNavFill:     { flex: 1, height: sc(48), borderRadius: sc(13), alignItems: 'center', justifyContent: 'center' },
+  learnNavFill: { flex: 1, height: sc(48), borderRadius: sc(13), alignItems: 'center', justifyContent: 'center' },
   learnNavFillText: { fontSize: sc(14), fontWeight: '800', color: '#fff' },
-
-  // ── Dots ──
   dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: sc(6), marginBottom: sc(4) },
-  dot:     { width: sc(8), height: sc(8), borderRadius: sc(4), backgroundColor: '#C9D0E8' },
-
-  // ── Question Block ──
-  questionBlock: {
-    backgroundColor: C.surface, borderRadius: sc(18), padding: sc(15), marginBottom: sc(18),
-    shadowColor: '#000', shadowOffset: { width: 0, height: sc(2) },
-    shadowOpacity: 0.06, shadowRadius: sc(8), elevation: 3,
-  },
-  strategyBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: sc(8),
-    backgroundColor: C.accentLight, borderRadius: sc(10),
-    paddingHorizontal: sc(12), paddingVertical: sc(8), marginBottom: sc(12),
-  },
-  strategyIcon:  { fontSize: sc(14) },
-  strategyLabel: { fontSize: sc(12), fontWeight: '700', color: C.accent },
-
-  qMeta:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: sc(4) },
-  exerciseBadge:     { backgroundColor: C.accentLight, paddingHorizontal: sc(9), paddingVertical: sc(3), borderRadius: sc(6) },
-  exerciseBadgeText: { fontSize: sc(10), fontWeight: '800', color: C.accentMid, letterSpacing: 0.7 },
-  qCounter:          { fontSize: sc(11), fontWeight: '600', color: C.muted },
-
-  qTitle:       { fontSize: sc(20), fontWeight: '900', color: C.text, marginBottom: sc(3), letterSpacing: -0.3 },
-  qInstruction: { fontSize: sc(12), fontStyle: 'italic', color: C.muted, marginBottom: sc(12), lineHeight: sc(18) },
-
-  contextBox: {
-    backgroundColor: C.accentLight, borderRadius: sc(12), padding: sc(13),
-    marginBottom: sc(12), borderLeftWidth: sc(3), borderLeftColor: C.accent,
-  },
-  contextLabel: { fontSize: sc(10), fontWeight: '800', color: C.accent, letterSpacing: 1, marginBottom: sc(4) },
-  contextText:  { fontSize: sc(13), lineHeight: sc(20), color: C.text, fontWeight: '500' },
-
-  sentenceRefBox: {
-    backgroundColor: '#F9FAFB', borderRadius: sc(12), padding: sc(11),
-    marginBottom: sc(12), borderWidth: 1, borderColor: C.border,
-  },
-  sentenceRefRow:       { flexDirection: 'row', gap: sc(9), marginBottom: sc(7), alignItems: 'flex-start' },
-  sentenceRefLabel:     { width: sc(22), height: sc(22), borderRadius: sc(6), backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: sc(1) },
-  sentenceRefLabelText: { fontSize: sc(11), fontWeight: '800', color: '#fff' },
-  sentenceRefText:      { flex: 1, fontSize: sc(12), lineHeight: sc(18), color: C.sub },
-
-  // Options
-  option:         { flexDirection: 'row', backgroundColor: '#F7F8FC', borderRadius: sc(13), padding: sc(13), marginBottom: sc(8), alignItems: 'flex-start', gap: sc(10), borderWidth: 1.5, borderColor: C.border },
-  optionSelected: { borderColor: C.accent, backgroundColor: C.accentLight },
-  optionCorrect:  { borderColor: C.correct, backgroundColor: C.correctBg },
-  optionWrong:    { borderColor: C.wrong,   backgroundColor: C.wrongBg },
-  optionDim:      { borderColor: C.border,  backgroundColor: '#FAFAFA', opacity: 0.55 },
-
-  optLetter:     { width: sc(30), height: sc(30), borderRadius: sc(9), alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  optLetterText: { fontSize: sc(13), fontWeight: '800', color: '#fff' },
-  optText:       { fontSize: sc(13), lineHeight: sc(20), color: C.text },
-  highlight:     { color: C.accent, fontWeight: '700' },
-
-  reasonText: { fontSize: sc(11), color: '#b91c1c', lineHeight: sc(16), marginTop: sc(3), fontStyle: 'italic' },
-  correctTag: { marginTop: sc(4), backgroundColor: '#DCFCE7', borderRadius: sc(5), paddingHorizontal: sc(7), paddingVertical: sc(2), alignSelf: 'flex-start' },
-  correctTagText: { fontSize: sc(10), fontWeight: '800', color: '#15803d' },
-  wrongTag:   { marginTop: sc(4), backgroundColor: '#FEE2E2', borderRadius: sc(5), paddingHorizontal: sc(7), paddingVertical: sc(2), alignSelf: 'flex-start' },
-  wrongTagText: { fontSize: sc(10), fontWeight: '800', color: '#b91c1c' },
-
-  feedbackBox:     { flexDirection: 'row', borderRadius: sc(12), padding: sc(13), gap: sc(10), alignItems: 'flex-start', marginTop: sc(10) },
-  feedbackCorrect: { backgroundColor: C.correctBg, borderWidth: 1, borderColor: C.correctBdr },
-  feedbackWrong:   { backgroundColor: '#FEF2F2',   borderWidth: 1, borderColor: C.wrongBdr   },
-  feedbackEmoji:   { fontSize: sc(20) },
-  feedbackTitle:   { fontSize: sc(13), fontWeight: '800', color: C.text,   marginBottom: sc(3) },
-  feedbackBody:    { fontSize: sc(12), lineHeight:  sc(18), color: C.sub },
-
-  checkBtn:         { backgroundColor: C.accent, borderRadius: sc(13), height: sc(50), alignItems: 'center', justifyContent: 'center', marginTop: sc(10), shadowColor: C.shadow, shadowOffset: { width: 0, height: sc(5) }, shadowOpacity: 0.25, shadowRadius: sc(10), elevation: 6 },
-  checkBtnDisabled: { backgroundColor: '#9CA3AF', shadowOpacity: 0, elevation: 0 },
-  checkBtnText:     { fontSize: sc(14), fontWeight: '800', color: '#fff', letterSpacing: 0.2 },
+  dot: { width: sc(8), height: sc(8), borderRadius: sc(4), backgroundColor: '#C9D0E8' },
 });

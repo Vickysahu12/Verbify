@@ -15,6 +15,7 @@ import ArticleReadScreen from "../screens/practiceArea/Article/ArticleReadScreen
 // RC
 import RcScreen from "../screens/practiceArea/RC/RcScreen";
 import RcReadingScreen from "../screens/practiceArea/RC/RcReadingScreen";
+import RCDailyScreen from "../screens/practiceArea/RC/RcDailyScreen";
 import RCResultScreen from "../screens/practiceArea/RC/RcResultScreen";
 
 // VA
@@ -23,6 +24,9 @@ import VaConcept from "../screens/practiceArea/VA/VaHubScreen";
 import ParajumbleScreen from "../screens/practiceArea/VA/ParaJumbleScreen";
 import OddOneOutScreen from "../screens/practiceArea/VA/OddOneOutScreen";
 import ParaSummaryScreen from "../screens/practiceArea/VA/ParaSummaryScreen";
+import ParaJumblePracticeScreen from "../screens/practiceArea/VA/ParaJumblePracticeScreen";
+import OddOneOutPracticeScreen from "../screens/practiceArea/VA/Oddoneoutpracticescreen";
+import ParaSummaryPracticeScreen from "../screens/practiceArea/VA/Parasummarypracticescreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -45,6 +49,7 @@ const PracticeStack = () => {
       {/* RC FLOW */}
       <Stack.Screen name="RC" component={RcScreen} />
       <Stack.Screen name="RcRead" component={RcReadingScreen}/>
+      <Stack.Screen name="RcDaily" component={RCDailyScreen}/>
       <Stack.Screen name="RcResult" component={RCResultScreen}/>
       
 
@@ -54,6 +59,9 @@ const PracticeStack = () => {
       <Stack.Screen name="Parajumble" component={ParajumbleScreen}/>
       <Stack.Screen name="OddOne" component={OddOneOutScreen}/>
       <Stack.Screen name="Parasum" component={ParaSummaryScreen}/>
+      <Stack.Screen name="ParaJumblePractice"  component={ParaJumblePracticeScreen}  />
+      <Stack.Screen name="OddOneOutPractice"   component={OddOneOutPracticeScreen}   />
+      <Stack.Screen name="ParaSummaryPractice" component={ParaSummaryPracticeScreen} />
 
     </Stack.Navigator>
   );

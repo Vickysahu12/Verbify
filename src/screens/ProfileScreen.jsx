@@ -66,7 +66,7 @@ const C = {
 const MOCK_USER = {
   id:          'u_001',
   name:        'Vicky Sahu',
-  email:       'Vicky.sahu@gmsil.com',
+  email:       'Vicky.sahu@gmail.com',
   phone:       '+91 98765 43210',
   avatarUrl:   null,             // TODO: string URI from API
   targetExam:  'CAT 2025',

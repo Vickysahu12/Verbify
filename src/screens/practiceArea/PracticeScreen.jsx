@@ -67,7 +67,7 @@ const PracticeScreen = () => {
         ],
         rc: [
           { label: 'Learn',    screen: 'RcRead' },
-          { label: 'Practice', screen: 'RC' }
+          { label: 'Practice', screen: 'RcDaily' }
         ],
         essay: [
           { label: 'Read',    screen: 'Article' },
