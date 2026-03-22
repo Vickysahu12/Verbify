@@ -82,6 +82,7 @@ const MOCK_USER = {
     expiresAt: '31 Dec 2025',
     isActive:  true,
   },
+  
 };
 
 // ─── SETTINGS CONFIG ──────────────────────────────────────────────────────────

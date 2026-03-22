@@ -2,6 +2,7 @@
  * ParaSummaryScreen.jsx — Learn Only
  * Sirf strategies + examples — koi practice questions nahi
  * Last card pe "Start Practice" button → ParaSummaryPractice screen
+ * 
  */
 
 import React, { useState, useRef } from 'react';

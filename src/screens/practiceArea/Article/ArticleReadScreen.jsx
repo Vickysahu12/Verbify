@@ -371,4 +371,5 @@ const s = StyleSheet.create({
   errorSub: { fontSize: sc(13), color: C.muted, textAlign: 'center' },
   errorBtn: { marginTop: sc(8), backgroundColor: C.primary, paddingHorizontal: sc(24), paddingVertical: sc(12), borderRadius: sc(12) },
   errorBtnText: { fontSize: sc(14), fontWeight: '800', color: '#fff' },
+  
 });

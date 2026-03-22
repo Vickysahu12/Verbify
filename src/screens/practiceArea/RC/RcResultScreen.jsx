@@ -236,6 +236,7 @@ const RCResultScreen = () => {
         </View>
       </Animated.View>
     </SafeAreaView>
+    
   );
 };
 

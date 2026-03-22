@@ -12,6 +12,7 @@ import { AuthService } from '../../../services/AuthService';
 const { width: SW } = Dimensions.get('window');
 const sc = n => (SW / 390) * n;
 
+
 const api = axios.create({
   baseURL: 'http://10.182.41.220:8000',
   headers: { 'Content-Type': 'application/json' },

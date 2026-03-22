@@ -417,4 +417,5 @@ const styles = StyleSheet.create({
   emptyEmoji:    { fontSize: scale(52), marginBottom: scale(14) },
   emptyTitle:    { fontSize: scale(18), fontWeight: "800", color: RC_COLORS.textPrimary, marginBottom: scale(6) },
   emptySubtitle: { fontSize: scale(14), color: RC_COLORS.textMuted, textAlign: "center", lineHeight: scale(20) },
+  
 });

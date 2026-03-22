@@ -2,6 +2,7 @@
  * ParaJumbleScreen.jsx — Learn Only
  * Sirf strategies + examples — koi practice questions nahi
  * Last card pe "Start Practice" button → ParaJumblePractice screen
+ * 
  */
 
 import React, { useState, useRef } from 'react';

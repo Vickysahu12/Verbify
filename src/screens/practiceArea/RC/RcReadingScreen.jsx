@@ -427,4 +427,5 @@ const styles = StyleSheet.create({
   ctaInner: { flexDirection: "row", alignItems: "center", gap: scale(8) },
   lockIcon: { fontSize: scale(14) },
   ctaText: { color: "#FFFFFF", fontSize: scale(15), fontWeight: "800" },
+  
 });

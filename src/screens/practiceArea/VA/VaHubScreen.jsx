@@ -140,6 +140,7 @@ const ModuleCard = React.memo(({ mod, navigation }) => {
   );
 });
 
+
 // ─── Accordion ───────────────────────────────────────────────────────────────
 const AccordionCard = React.memo(({ item, isOpen, onToggle }) => {
   const heightAnim = useRef(new Animated.Value(0)).current;

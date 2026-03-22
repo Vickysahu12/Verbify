@@ -461,4 +461,5 @@ const s = StyleSheet.create({
   emptySub: { fontSize: sc(13), color: C.muted, textAlign: 'center', lineHeight: sc(19) },
   emptyReset: { marginTop: sc(8), backgroundColor: C.primaryLight, paddingHorizontal: sc(20), paddingVertical: sc(10), borderRadius: sc(12) },
   emptyResetText: { fontSize: sc(13), fontWeight: '700', color: C.primary },
+  
 });

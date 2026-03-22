@@ -62,6 +62,7 @@ const PracticeStack = () => {
       <Stack.Screen name="ParaJumblePractice"  component={ParaJumblePracticeScreen}  />
       <Stack.Screen name="OddOneOutPractice"   component={OddOneOutPracticeScreen}   />
       <Stack.Screen name="ParaSummaryPractice" component={ParaSummaryPracticeScreen} />
+      
 
     </Stack.Navigator>
   );

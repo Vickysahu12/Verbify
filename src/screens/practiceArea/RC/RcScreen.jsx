@@ -524,4 +524,5 @@ const styles = StyleSheet.create({
   nextBtn: { paddingVertical: scale(13), paddingHorizontal: scale(22), borderRadius: scale(14), backgroundColor: C.primary, minWidth: scale(90), alignItems: "center", ...Platform.select({ android: { elevation: 2 } }) },
   nextBtnDisabled: { backgroundColor: C.textMuted },
   nextText: { fontWeight: "800", fontSize: scale(14), color: "#FFFFFF" },
+  
 });
