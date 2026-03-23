@@ -8,24 +8,16 @@ import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { AuthService } from '../../../services/AuthService';
 
-const payload = {
-  question_id: String(questionId),   // 🔥 MOST IMPORTANT FIX
-  question_type: String(questionType),
-  selected: String(selected),
-};
-
-console.log("SUBMIT PAYLOAD:", payload); // 👈 DEBUG
-
-const res = await api.post('/va/submit', payload, {
-  headers: { Authorization: `Bearer ${token}` }
+const api = axios.create({
+  baseURL: 'http://10.182.41.220:8000',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
 });
 
 export const useVAQuestions = (questionType) => {
   const [questions, setQuestions] = useState([]);
   const [loading,   setLoading]   = useState(true);
-  // answers: { [questionId]: "A" | "B" | "C" | "D" | null }
   const [answers,   setAnswers]   = useState({});
-  // results: { [questionId]: { is_correct, correct, explanation } }
   const [results,   setResults]   = useState({});
 
   const loadQuestions = useCallback(async () => {
@@ -38,7 +30,6 @@ export const useVAQuestions = (questionType) => {
       });
       const qs = res.data ?? [];
       setQuestions(qs);
-      // Init answers
       const initAnswers = {};
       qs.forEach(q => { initAnswers[q.id] = null; });
       setAnswers(initAnswers);
@@ -52,7 +43,6 @@ export const useVAQuestions = (questionType) => {
   }, [questionType]);
 
   const handleSelect = useCallback((questionId, optionId) => {
-    // Only allow selection if not yet submitted
     if (results[questionId]) return;
     setAnswers(prev => ({ ...prev, [questionId]: optionId }));
   }, [results]);
@@ -60,7 +50,6 @@ export const useVAQuestions = (questionType) => {
   const handleCheck = useCallback(async (questionId) => {
     const selected = answers[questionId];
     if (!selected) return;
-    // Already submitted
     if (results[questionId]) return;
 
     try {
@@ -74,7 +63,6 @@ export const useVAQuestions = (questionType) => {
       setResults(prev => ({ ...prev, [questionId]: res.data }));
     } catch (err) {
       console.log('VA submit error:', err);
-      // Graceful fallback — mark as checked with unknown result
       setResults(prev => ({
         ...prev,
         [questionId]: { is_correct: false, correct: '?', explanation: { why: 'Could not verify answer.' } }
@@ -96,5 +84,4 @@ export const useVAQuestions = (questionType) => {
     isChecked, getResult,
     totalCorrect, totalChecked,
   };
-  
 };
