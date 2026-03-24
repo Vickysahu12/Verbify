@@ -188,7 +188,7 @@ export default function ParaJumblePracticeScreen({ navigation }) {
         <Text style={{ fontWeight: '700', marginRight: 6 }}>
           {s.label}.
         </Text>
-        <Text style={{ flex: 1 }}>
+        <Text style={{ flex: 1, color: C.text }}>
           {s.text}
         </Text>
       </View>
