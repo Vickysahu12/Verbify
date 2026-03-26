@@ -8,7 +8,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   StatusBar, SafeAreaView, Platform, Animated, Dimensions, ActivityIndicator,
 } from 'react-native';
-import { getMockDetail } from '../services/mockService';
+import { getMockDetail } from '../../services/mockService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

@@ -12,7 +12,7 @@ import {
   StatusBar, TextInput, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { getExamConfig, submitAttempt, saveProgress } from '../services/mockService';
+import { getExamConfig, submitAttempt, saveProgress } from '../../services/mockService';
 
 const { width, height } = Dimensions.get('window');
 const scale = s => (width / 390) * s;

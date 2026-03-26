@@ -1,16 +1,3 @@
-/**
- * SolutionScreen.jsx — BACKEND INTEGRATED
- * ─────────────────────────────────────────────────────────────────────────────
- * Route params:
- *   attemptId  — UUID string   ← used for API call
- *   mockId     — UUID string
- *   examConfig — for testTitle fallback
- * ─────────────────────────────────────────────────────────────────────────────
- * GET /attempts/{attemptId}/solutions
- * Returns: sections → passages + questions with correct answers + user responses
- * ─────────────────────────────────────────────────────────────────────────────
- */
-
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, FlatList,
@@ -18,7 +5,7 @@ import {
   Platform, Dimensions, LayoutAnimation, UIManager,
   ActivityIndicator,
 } from 'react-native';
-import { getSolutions } from '../services/mockService';
+import { getSolutions } from '../../services/mockService';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
