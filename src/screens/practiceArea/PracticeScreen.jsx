@@ -13,7 +13,7 @@ const { width } = Dimensions.get("window");
 const scale = (s) => (width / 375) * s;
 
 const api = axios.create({
-  baseURL: 'http://https://web-production-4c19b.up.railway.app:8000',
+  baseURL: 'https://web-production-4c19b.up.railway.app',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });

@@ -25,7 +25,7 @@ const C = {
 };
 
 // ─── API SETUP ───────────────────────────────────────────────────────────────
-const BASE_URL = 'http://https://web-production-4c19b.up.railway.app:8000';
+const BASE_URL = 'https://web-production-4c19b.up.railway.app';
 
 const api = axios.create({
   baseURL: BASE_URL,
