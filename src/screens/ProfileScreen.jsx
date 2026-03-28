@@ -18,7 +18,7 @@ const { width: SW } = Dimensions.get('window');
 const sc = n => (SW / 390) * n;
 
 // ─── BASE URL — same as AuthService ──────────────────────────────────────────
-const BASE_URL = 'http://10.182.41.220:8000';
+const BASE_URL = 'https://web-production-4c19b.up.railway.app';
 
 const api = axios.create({
   baseURL: BASE_URL,

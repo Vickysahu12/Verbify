@@ -31,7 +31,7 @@ const OTPVerifyScreen = ({ navigation, route }) => {
   const handleResend = async () => {
     setIsResending(true);
     try {
-      await fetch('http://10.182.41.220:8000/auth/resend-otp', {
+      await fetch('http://https://web-production-4c19b.up.railway.app:8000/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

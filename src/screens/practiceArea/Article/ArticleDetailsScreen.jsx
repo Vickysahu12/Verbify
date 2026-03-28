@@ -14,7 +14,7 @@ const sc = n => (SW / 390) * n;
 
 
 const api = axios.create({
-  baseURL: 'http://10.182.41.220:8000',
+  baseURL: 'http://https://web-production-4c19b.up.railway.app:8000',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });
