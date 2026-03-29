@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   SafeAreaView, Dimensions, RefreshControl,
@@ -9,6 +9,7 @@ import Backbutton from "../../assets/icon/backbutton.png";
 import axios from 'axios';
 import { AuthService } from '../../services/AuthService';
 import { useFocusEffect } from '@react-navigation/native';
+
 const { width } = Dimensions.get("window");
 const scale = (s) => (width / 375) * s;
 
@@ -18,15 +19,6 @@ const api = axios.create({
   timeout: 10000,
 });
 
-const DUMMY_WORD = {
-  word: "Ephemeral",
-  pronunciation: "/əˈfem(ə)rəl/",
-  question: "Select the most accurate meaning:",
-  options: ["Short-lived", "Permanent", "Transparent", "Weak"],
-  correct: 0,
-  explanation: "Ephemeral means lasting for a very short time.",
-};
-
 const PracticeScreen = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
@@ -35,15 +27,9 @@ const PracticeScreen = () => {
   const [goalData, setGoalData] = useState({ completed: 0, total: 20, streak: 0 });
   const [modules, setModules] = useState([]);
 
-  useFocusEffect(
-  useCallback(() => {
-    loadData();
-  }, [])
-);
-
-  const loadData = async () => {
+  const loadData = useCallback(async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const token = await AuthService.getToken();
 
       const [practiceRes, homeRes] = await Promise.all([
@@ -63,19 +49,19 @@ const PracticeScreen = () => {
       const moduleButtons = {
         vocab: [
           { label: 'Learn',    screen: 'VocabLearning' },
-          { label: 'Practice', screen: 'Vocab', params: { wordData: DUMMY_WORD } }
+          { label: 'Practice', screen: 'VocabLearning' }, // navigate to real vocab flow, not dummy
         ],
         rc: [
           { label: 'Learn',    screen: 'RcRead' },
-          { label: 'Practice', screen: 'RcDaily' }
+          { label: 'Practice', screen: 'RcDaily' },
         ],
         essay: [
           { label: 'Read',    screen: 'Article' },
-          { label: 'Analyse', screen: 'ArticleDetail' }
+          { label: 'Analyse', screen: 'ArticleDetail' },
         ],
         va: [
           { label: 'Concepts', screen: 'VaConcept' },
-          { label: 'Practice', screen: 'VA' }
+          { label: 'Practice', screen: 'VA' },
         ],
       };
 
@@ -95,18 +81,30 @@ const PracticeScreen = () => {
       })));
 
     } catch (error) {
-      console.log('Error loading practice data:', error);
+      console.log('Error loading practice data:', error.message);
       setGoalData({ completed: 0, total: 20, streak: 0 });
       setModules([]);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  // First mount — show spinner
+  useEffect(() => {
+    loadData(false);
+  }, [loadData]);
+
+  // Returning from a practice screen — silent refresh so progress updates
+  useFocusEffect(
+    useCallback(() => {
+      loadData(true);
+    }, [loadData])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+    await loadData(true);
   };
 
   if (isLoading) {
@@ -154,7 +152,12 @@ const PracticeScreen = () => {
             <Text style={styles.goalCount}>{goalData.completed}/{goalData.total}</Text>
           </View>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${(goalData.completed / goalData.total) * 100}%` }]} />
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${Math.min((goalData.completed / goalData.total) * 100, 100)}%` },
+              ]}
+            />
           </View>
           <Text style={styles.goalSub}>
             {goalData.completed}/{goalData.total} Questions solved today. You're on a {goalData.streak}-day streak! 🔥
@@ -190,7 +193,12 @@ const ModuleCard = ({ module, navigation }) => (
     <Text style={styles.cardDesc}>{module.description}</Text>
     <View style={styles.cardBottom}>
       <View style={styles.cardProgress}>
-        <View style={[styles.cardProgressFill, { width: `${module.progress}%` }]} />
+        <View
+          style={[
+            styles.cardProgressFill,
+            { width: `${Math.min(module.progress, 100)}%` },
+          ]}
+        />
       </View>
       <Text style={styles.percent}>{module.progress}%</Text>
     </View>
@@ -199,7 +207,11 @@ const ModuleCard = ({ module, navigation }) => (
         <TouchableOpacity
           key={index}
           style={[styles.ctaSmall, index === 0 ? styles.ctaPrimary : styles.ctaSecondary]}
-          onPress={() => button.params ? navigation.navigate(button.screen, button.params) : navigation.navigate(button.screen)}
+          onPress={() =>
+            button.params
+              ? navigation.navigate(button.screen, button.params)
+              : navigation.navigate(button.screen)
+          }
           activeOpacity={0.8}
         >
           <Text style={index === 0 ? styles.ctaPrimaryText : styles.ctaSecondaryText}>

@@ -49,17 +49,22 @@ const RegisterScreen = ({ navigation }) => {
         formData.email,
         formData.password
       );
-      // OTP screen pe bhejo
       navigation.navigate("OTPVerify", { email: formData.email });
 
     } catch (error) {
       const detail = error.response?.data?.detail;
+      const message = error.message;
+
       if (detail?.includes("Email already")) {
         Alert.alert("Already Registered", "This email is already registered. Please login.");
       } else if (detail?.includes("Phone")) {
         Alert.alert("Phone Exists", "This phone number is already registered.");
+      } else if (message === 'Network Error') {
+        Alert.alert("Network Error", "Internet connection check karo ya thodi der baad try karo.");
+      } else if (message?.includes('timeout')) {
+        Alert.alert("Timeout", "Server respond nahi kar raha. Thodi der baad try karo.");
       } else {
-        Alert.alert("Registration Failed", detail || "Something went wrong. Try again.");
+        Alert.alert("Registration Failed", detail || message || "Something went wrong. Try again.");
       }
     } finally {
       setIsLoading(false);
@@ -79,7 +84,6 @@ const RegisterScreen = ({ navigation }) => {
           </View>
           <View style={{ height: 20 }} />
           <View style={styles.form}>
-            {/* Full Name */}
             <View>
               <TextInput
                 placeholder="Full Name" placeholderTextColor="#6B7280"
@@ -90,7 +94,6 @@ const RegisterScreen = ({ navigation }) => {
               />
               {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
             </View>
-            {/* Phone */}
             <View>
               <TextInput
                 placeholder="Phone Number" placeholderTextColor="#6B7280"
@@ -102,7 +105,6 @@ const RegisterScreen = ({ navigation }) => {
               />
               {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
             </View>
-            {/* Email */}
             <View>
               <TextInput
                 placeholder="Email Address" placeholderTextColor="#6B7280"
@@ -113,7 +115,6 @@ const RegisterScreen = ({ navigation }) => {
               />
               {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
-            {/* Password */}
             <View>
               <View style={[styles.passwordWrapper, errors.password && styles.inputError]}>
                 <TextInput
@@ -128,7 +129,6 @@ const RegisterScreen = ({ navigation }) => {
               </View>
               {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
             </View>
-            {/* Confirm Password */}
             <View>
               <View style={[styles.passwordWrapper, errors.confirmPassword && styles.inputError]}>
                 <TextInput
