@@ -9,32 +9,14 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// Response interceptor — 200 aaye but axios error kare toh bhi handle karo
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && (error.response.status === 200 || error.response.status === 201)) {
-      return Promise.resolve(error.response);
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const AuthService = {
 
   register: async (name, phone, email, password) => {
-  const response = await fetch(
-    'https://web-production-4c19b.up.railway.app/auth/register',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, email, password }),
-    }
-  );
-  const data = await response.json();
-  if (!response.ok) throw { response: { data, status: response.status } };
-  return data;
-},
+    await AsyncStorage.clear();
+    // fetch hata ke axios use kar raha hai — Android pe fetch POST kabhi kabhi fail karta hai
+    const response = await api.post('/auth/register', { name, phone, email, password });
+    return response.data;
+  },
 
   verifyOTP: async (email, otp) => {
     const response = await api.post('/auth/verify-otp', { email, otp });
@@ -43,13 +25,14 @@ export const AuthService = {
   },
 
   login: async (email, password) => {
+    await AsyncStorage.clear();
     const response = await api.post('/auth/login', { email, password });
     await AsyncStorage.setItem('token', response.data.access_token);
     return response.data;
   },
 
   logout: async () => {
-    await AsyncStorage.removeItem('token');
+    await AsyncStorage.clear();
   },
 
   getToken: async () => {

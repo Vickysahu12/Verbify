@@ -1,15 +1,9 @@
-/**
- * useVAQuestions.js
- * Shared hook for all 3 VA practice screens
- * Usage: const { questions, loading, answers, results, handleSelect, handleCheck } = useVAQuestions('para_jumble')
- */
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { AuthService } from '../../../services/AuthService';
 
 const api = axios.create({
-  baseURL: 'http://https://web-production-4c19b.up.railway.app:8000',
+  baseURL: 'https://web-production-4c19b.up.railway.app',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });
@@ -35,12 +29,17 @@ export const useVAQuestions = (questionType) => {
       setAnswers(initAnswers);
       setResults({});
     } catch (err) {
-      console.log(`VA questions (${questionType}) error:`, err);
+      console.log(`VA questions (${questionType}) error:`, err.message);
       setQuestions([]);
     } finally {
       setLoading(false);
     }
   }, [questionType]);
+
+  // ✅ FIX — mount pe automatically load ho
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
 
   const handleSelect = useCallback((questionId, optionId) => {
     if (results[questionId]) return;
@@ -62,7 +61,7 @@ export const useVAQuestions = (questionType) => {
 
       setResults(prev => ({ ...prev, [questionId]: res.data }));
     } catch (err) {
-      console.log('VA submit error:', err);
+      console.log('VA submit error:', err.message);
       setResults(prev => ({
         ...prev,
         [questionId]: { is_correct: false, correct: '?', explanation: { why: 'Could not verify answer.' } }
@@ -70,8 +69,8 @@ export const useVAQuestions = (questionType) => {
     }
   }, [answers, results, questionType]);
 
-  const isChecked = useCallback((questionId) => !!results[questionId], [results]);
-  const getResult = useCallback((questionId) => results[questionId] ?? null, [results]);
+  const isChecked    = useCallback((questionId) => !!results[questionId], [results]);
+  const getResult    = useCallback((questionId) => results[questionId] ?? null, [results]);
 
   const totalCorrect = Object.values(results).filter(r => r?.is_correct).length;
   const totalChecked = Object.keys(results).length;

@@ -12,12 +12,11 @@ const { width: SW } = Dimensions.get('window');
 const sc = n => (SW / 390) * n;
 
 const api = axios.create({
-  baseURL: 'http://https://web-production-4c19b.up.railway.app:8000',
+  baseURL: 'https://web-production-4c19b.up.railway.app',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });
 
-// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const C = {
   primary:      '#1F3B1F',
   primaryLight: '#E8F5EE',
@@ -53,7 +52,6 @@ const CATEGORIES = [
   { key: 'Technology', emoji: '⚙️' },
 ];
 
-// ─── SKELETON ────────────────────────────────────────────────────────────────
 const SkeletonPulse = ({ style }) => {
   const anim = useRef(new Animated.Value(0.4)).current;
   React.useEffect(() => {
@@ -90,7 +88,6 @@ const ArticleSkeleton = () => (
   </View>
 );
 
-// ─── SECTION HEADER ──────────────────────────────────────────────────────────
 const SectionHeader = ({ title }) => (
   <View style={s.sectionHeaderRow}>
     <View style={s.sectionHeaderLeft}>
@@ -100,7 +97,6 @@ const SectionHeader = ({ title }) => (
   </View>
 );
 
-// ─── FEATURED CARD ───────────────────────────────────────────────────────────
 const FeaturedCard = React.memo(({ item, onPress, onBookmark }) => {
   const pressScale = useRef(new Animated.Value(1)).current;
   const lvl = LEVEL_CFG[item.level] ?? LEVEL_CFG.Medium;
@@ -148,7 +144,6 @@ const FeaturedCard = React.memo(({ item, onPress, onBookmark }) => {
   );
 });
 
-// ─── LIST CARD ───────────────────────────────────────────────────────────────
 const ListCard = React.memo(({ item, onPress, onBookmark }) => {
   const pressScale = useRef(new Animated.Value(1)).current;
   const lvl = LEVEL_CFG[item.level] ?? LEVEL_CFG.Medium;
@@ -207,35 +202,34 @@ const ArticleScreen = () => {
   const [loading,        setLoading]        = useState(true);
   const [articles,       setArticles]       = useState([]);
 
-  // ── Fetch from backend ────────────────────────────────────────────────────
-  useFocusEffect(
-    useCallback(() => {
-      fetchArticles();
-    }, [])
-  );
-
-  const fetchArticles = async (tag = null, q = null) => {
+  // ✅ FIX — fetchArticles ko pehle define karo, useFocusEffect ke baad nahi
+  const fetchArticles = useCallback(async () => {
     try {
       setLoading(true);
       const token  = await AuthService.getToken();
       const params = {};
-      if (tag && tag !== 'All') params.tag = tag;
-      if (q && q.trim())        params.q   = q.trim();
 
       const res = await api.get('/articles', {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
+      console.log('Articles fetched:', res.data?.length ?? 0); // debug ke liye
       setArticles(res.data ?? []);
     } catch (err) {
-      console.log('ArticleScreen fetch error:', err);
+      console.log('ArticleScreen fetch error:', err.message);
       setArticles([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // ── Filter locally for search (fast UX, no extra API call) ───────────────
+  // ✅ ab fetchArticles define ho chuki hai, safely use kar sakte hain
+  useFocusEffect(
+    useCallback(() => {
+      fetchArticles();
+    }, [fetchArticles])
+  );
+
   const filtered = useMemo(() => {
     let list = articles;
     if (activeCategory !== 'All') list = list.filter(a => a.tag === activeCategory);
@@ -248,7 +242,6 @@ const ArticleScreen = () => {
     return list;
   }, [articles, activeCategory, searchQuery]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const handlePress = useCallback((item) => {
     navigation.navigate('ArticleRead', { articleId: item.id });
   }, [navigation]);
@@ -263,8 +256,7 @@ const ArticleScreen = () => {
         prev.map(a => a.id === id ? { ...a, is_bookmarked: res.data.is_bookmarked } : a)
       );
     } catch (err) {
-      console.log('Bookmark error:', err);
-      // Optimistic toggle on error
+      console.log('Bookmark error:', err.message);
       setArticles(prev =>
         prev.map(a => a.id === id ? { ...a, is_bookmarked: !a.is_bookmarked } : a)
       );
@@ -280,7 +272,6 @@ const ArticleScreen = () => {
     <SafeAreaView style={s.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
 
-      {/* ── NAVBAR ── */}
       <View style={s.navbar}>
         <View style={s.navLeft}>
           <View style={s.navIconWrap}><Text style={s.navIcon}>📘</Text></View>
@@ -299,7 +290,6 @@ const ArticleScreen = () => {
         contentContainerStyle={s.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── SEARCH BAR ── */}
         <View style={[s.searchBar, searchFocused && s.searchBarFocused]}>
           <Text style={s.searchIcon}>🔍</Text>
           <TextInput
@@ -320,7 +310,6 @@ const ArticleScreen = () => {
           )}
         </View>
 
-        {/* ── CATEGORY CHIPS ── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={s.categoriesContent}>
           {CATEGORIES.map(cat => {
@@ -349,7 +338,6 @@ const ArticleScreen = () => {
               </View>
             )}
 
-            {/* Featured */}
             {filtered.length > 0 && (
               <>
                 <SectionHeader title="Recommended for You" />
@@ -365,7 +353,6 @@ const ArticleScreen = () => {
               </>
             )}
 
-            {/* All articles list */}
             {filtered.length > 0 && (
               <>
                 <SectionHeader title="Daily Practice Passages" />
@@ -385,7 +372,6 @@ const ArticleScreen = () => {
 
 export default ArticleScreen;
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   navbar: {
@@ -461,5 +447,4 @@ const s = StyleSheet.create({
   emptySub: { fontSize: sc(13), color: C.muted, textAlign: 'center', lineHeight: sc(19) },
   emptyReset: { marginTop: sc(8), backgroundColor: C.primaryLight, paddingHorizontal: sc(20), paddingVertical: sc(10), borderRadius: sc(12) },
   emptyResetText: { fontSize: sc(13), fontWeight: '700', color: C.primary },
-  
 });
