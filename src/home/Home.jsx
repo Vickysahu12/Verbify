@@ -8,8 +8,12 @@ import {
 import axios from 'axios';
 import { AuthService } from '../services/AuthService';
 
-const { width: SW } = Dimensions.get('window');
-const sc = n => (SW / 390) * n;
+const { width: SW, height: SH } = Dimensions.get('window');
+
+const sc = n => {
+  const s = Math.min(SW / 390, SH / 844, 1.25);
+  return Math.round(n * s);
+};
 
 const api = axios.create({
   baseURL: 'https://web-production-4c19b.up.railway.app',
@@ -521,7 +525,9 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: sc(18),
-    paddingTop:    Platform.OS === 'android' ? sc(36) : sc(12),
+    paddingTop: Platform.OS === 'android' 
+      ? (StatusBar.currentHeight ?? sc(36)) + sc(8)
+      : sc(12),
     paddingBottom: sc(12),
     backgroundColor: C.bg,
   },
