@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'https://web-production-4c19b.up.railway.app';
+const BASE_URL = 'https://lingolift-backend.onrender.com';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -36,53 +36,31 @@ const apiWithRetry = async (fn, attempts = 3) => {
 export const AuthService = {
 
   register: async (name, phone, email, password) => {
-  try {
-    const res = await fetch('https://web-production-4c19b.up.railway.app/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name, phone, email, password }),
+    return await apiWithRetry(async () => {
+      console.log('[AuthService] Registering...', { name, phone, email });
+      const response = await api.post('/auth/register', {
+        name, phone, email, password,
+      });
+      console.log('[AuthService] Register success:', response.status);
+      return response.data;
     });
-
-    const data = await res.json();
-
-    console.log("REGISTER RESPONSE:", data);
-
-    return data;
-
-  } catch (err) {
-    console.log("FETCH ERROR:", err);
-    throw err;
-  }
-},
+  },
 
   verifyOTP: async (email, otp) => {
     return await apiWithRetry(async () => {
       const response = await api.post('/auth/verify-otp', { email, otp });
-
       await AsyncStorage.setItem('token', response.data.access_token);
-
       return response.data;
     });
   },
 
   login: async (email, password) => {
-    // ✅ Only remove token
     await AsyncStorage.removeItem('token');
-
     return await apiWithRetry(async () => {
       console.log('[AuthService] Logging in...', email);
-
-      const response = await api.post('/auth/login', {
-        email,
-        password,
-      });
-
+      const response = await api.post('/auth/login', { email, password });
       console.log('[AuthService] Login success:', response.status);
-
       await AsyncStorage.setItem('token', response.data.access_token);
-
       return response.data;
     });
   },

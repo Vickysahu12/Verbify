@@ -17,7 +17,7 @@ import backicon from "../../../assets/icon/backbutton.png";
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: "https://web-production-4c19b.up.railway.app",
+  baseURL: "https://lingolift-backend.onrender.com",
   headers: { "Content-Type": "application/json" },
   timeout: 10000,
 });

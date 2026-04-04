@@ -9,7 +9,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'https://web-production-4c19b.up.railway.app';
+const BASE_URL = 'https://lingolift-backend.onrender.com';
 
 const api = axios.create({
   baseURL: BASE_URL,
