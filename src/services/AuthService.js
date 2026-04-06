@@ -11,7 +11,7 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// Retry with up too 3 attempts
+
 const apiWithRetry = async (fn, attempts = 3) => {
   for (let i = 1; i <= attempts; i++) {
     try {
