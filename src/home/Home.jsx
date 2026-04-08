@@ -21,7 +21,7 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// ─── DESIGN TOKENS 
+ 
 const C = {
   primary:      '#1F3B1F',
   primaryLight: '#E8F5EE',
