@@ -21,7 +21,6 @@ const OnboardingScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAF6" />
 
-      {/* Illustration with Loading State */}
       <View style={styles.imageContainer}>
         {!imageLoaded && (
           <ActivityIndicator 
