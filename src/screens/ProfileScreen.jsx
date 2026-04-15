@@ -118,7 +118,7 @@ const SETTINGS = [
     title: 'Support',
     items: [
       { id: 'help',  icon: '💬', label: 'Help and Support', screen: 'Help'  },
-      { id: 'about', icon: 'ℹ️',  label: 'About Verbify',   screen: 'About' },
+      { id: 'about', icon: 'ℹ️',  label: 'About LingoLift',   screen: 'About' },
       { id: 'rate',  icon: '⭐',  label: 'Rate the App',    screen: null    },
     ],
   },
@@ -414,7 +414,7 @@ export default function ProfileScreen() {
             <Text style={s.logoutText}>Log Out</Text>
           </TouchableOpacity>
 
-          <Text style={s.version}>Verbify v1.0.0</Text>
+          <Text style={s.version}>LingoLift v1.0.0</Text>
         </Animated.ScrollView>
       )}
     </SafeAreaView>
